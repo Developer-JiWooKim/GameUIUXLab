@@ -281,10 +281,10 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Score
+  m_text: "\uC810\uC218"
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: f8802cdf5316acb45b71a160083153ee, type: 2}
-  m_sharedMaterial: {fileID: -6269700506862428983, guid: f8802cdf5316acb45b71a160083153ee, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: a5b264d3bb8ebf34b99d1e429a6a655c, type: 2}
+  m_sharedMaterial: {fileID: -8773675310299623086, guid: a5b264d3bb8ebf34b99d1e429a6a655c, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []

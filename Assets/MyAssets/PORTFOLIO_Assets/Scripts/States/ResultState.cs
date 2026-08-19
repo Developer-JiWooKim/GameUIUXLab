@@ -1,0 +1,20 @@
+namespace Assets.MyAssets.PORTFOLIO_Assets.Scripts.States
+{
+    /// <summary>
+    /// Screen_Result 에 붙인다. FirstSelected = ReplayButton
+    ///
+    /// 최종 값 표시는 ResultView가 OnEnable에서 처리한다.
+    /// 결과 화면은 켜지는 순간 한 번만 그리면 되므로 이벤트 구독이 필요 없다.
+    ///
+    /// 버튼 연결(인스펙터 onClick):
+    ///   ReplayButton  → ScreenManager.ShowPlay()    ← Set이므로 PlayState.Enter()가 다시 불려 초기화된다
+    ///   GoTitleButton → ScreenManager.ShowTitle()
+    /// </summary>
+    public class ResultState : UiStateBase
+    {
+        public override void OnCancel()
+        {
+            // 결과 화면에서 Esc는 무시한다. 다시하기/타이틀로 중 하나를 명시적으로 고르게 한다.
+        }
+    }
+}
