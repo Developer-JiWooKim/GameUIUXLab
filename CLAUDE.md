@@ -5,13 +5,13 @@
 학교 과제(NCS `0803020529_24v5` 게임 UI/UX 프로그래밍)로 제출하는 Unity 6 UI 프로토타입입니다.
 **평가 대상은 게임의 재미나 규모가 아니라 UI/UX 설계·구현·검증 과정입니다.**
 
-제한 시간 60초 안에 손님의 주문을 정확히 처리해 점수를 얻는 캐주얼 세로형 게임입니다.
+제한된 영업시간(기본 120초) 안에 손님의 주문을 정확히 처리해 점수를 얻는 캐주얼 세로형 게임입니다.
 
 ```
-손님 1명 등장 → 주문 카드 표시 → 진열대에서 디저트를 눌러 쟁반에 담기 → 제출
-  ├ 주문과 일치     → 점수 획득, 처리 +1
-  └ 불일치/시간초과 → 실패 +1
-→ 다음 손님 → (영업시간 60초 종료) → 결과 화면
+손님 1명 등장 → 주문 카드 표시 → 진열대에서 디저트를 누름 → 누른 즉시 판정
+  ├ 주문에 있는 품목 → 쟁반에 담김. 주문을 다 채우면 점수 획득, 처리 +1
+  └ 주문에 없는 품목 → 그 자리에서 실패, 실패 +1
+→ 영업시간 120초(인스펙터 조정 가능) 종료 → 결과 화면
 ```
 
 마감은 2026-08-26입니다. **완성도보다 요건 충족이 우선입니다.**
@@ -24,6 +24,8 @@
 
 - 난이도 상승 곡선, 시간에 따른 스폰 가속
 - 콤보, 보너스 점수, 배수 시스템
+- 게임 중 `score`에 실패 감점 (등급 산식은 결과 화면 계산 전용. HUD 점수는 성공 시 가산만)
+- 시간이 줄수록 빨라지는 가속 점멸 (초당 3회 초과는 광과민성 발작 기준에 걸립니다)
 - 손님 캐릭터 스프라이트, 표정, 등장 애니메이션
 - 최고 점수 저장, `PlayerPrefs`, 세이브/로드
 - 효과음, BGM, `AudioSource`
@@ -33,7 +35,6 @@
 - 오브젝트 풀링, `DOTween` 등 외부 라이브러리
 - 씬 분리 (`SceneManager.LoadScene`)
 - Safe Area(노치) 대응
-- 게임패드 입력
 
 추가 기능이 필요해 보이면 **구현하지 말고 먼저 물어보세요.**
 
@@ -47,7 +48,7 @@
 | UI | UGUI (`UnityEngine.UI`) |
 | 텍스트 | **TextMeshPro 필수** (`TextMeshProUGUI`). 레거시 `Text` 사용 금지 |
 | 입력 | Input System (`InputSystem_Actions` 에셋 이미 존재) |
-| 씬 | **단일 씬** (`GameUIUXLab`). 화면 전환은 패널 활성/비활성 |
+| 씬 | **단일 씬** (`PortfolioAssignment`). 화면 전환은 패널 활성/비활성 |
 | 해상도 | 1080 × 1920 세로 |
 | Canvas Scaler | Scale With Screen Size, Match **0** (Width 기준) |
 
@@ -63,7 +64,8 @@ Assets/
 │   └── PORTFOLIO_Assets/
 │       ├── Scene/
 │       ├── Scripts/          ← 여기에 코드 작성
-│       ├── Sprite/           ← 디저트 아이콘 5종
+│       ├── Sprites/CakeIcon/  ← 디저트 아이콘 5종
+│       ├── Font/             ← KERISKEDU_R SDF (한글)
 │       └── Prefabs/          ← UI 프리팹
 ├── Skyden_Games/             ← Free Casual GUI (버튼/패널/게이지 배경)
 ├── TextMesh Pro/
@@ -76,7 +78,7 @@ Assets/
 
 ## 디저트 품목
 
-스프라이트 5종이 `Sprite/`에 있습니다. 형태가 서로 다르도록 선별한 것이므로 늘리거나 줄이지 마세요.
+스프라이트 5종이 `Sprites/CakeIcon/`에 있습니다. 형태가 서로 다르도록 선별한 것이므로 늘리거나 줄이지 마세요.
 
 ```csharp
 public enum DessertType
@@ -111,20 +113,21 @@ UI 스크립트가 점수 같은 게임 데이터를 직접 소유하면 안 됩
 
 | 스크립트 | 역할 |
 | :--- | :--- |
-| `GameState` | score, remainingTime, currentOrder, tray, successCount, failCount 보유 |
+| `GameState` | score, remainingTime, currentOrder, remaining, tray, successCount, failCount, isJudging 보유 |
 | `OrderGenerator` | 무작위 주문 생성 (품목 1~3종, 각 1~2개) |
 | `ScreenManager` | 화면 패널 전환, 전환 시 초기 선택 버튼 지정 |
 | `HudController` | GameState 값을 HUD에 반영 |
 | `OrderCardView` | 현재 주문을 DessertIcon으로 표시 |
-| `TrayView` | 쟁반 슬롯 표시, 담기·취소 처리 |
-| `ShelfView` | 진열대 버튼 생성 및 입력 수신 |
+| `TrayView` | 쟁반 슬롯 표시 (표시 전용. 클릭을 받지 않음) |
+| `ShelfView` | 진열대 버튼 입력 수신, 판정 중 버튼 잠금 |
 | `ToastController` | 알림 메시지 표시·소멸 |
+| `RankTable` | 성공·실패 건수 → 등급 A~F + 등급 색 판정 |
 
 ### 화면
 
 ```
 Screen_Title   — 시작, 종료
-Screen_Play    — HUD + 주문카드 + 쟁반 + 제출 + 진열대
+Screen_Play    — HUD + 주문카드 + 쟁반 + 진열대
 Screen_Pause   — 계속하기, 타이틀로(확인 팝업 경유)
 Screen_Result  — 최종 점수, 처리/실패, 다시하기, 타이틀로
 ```
@@ -141,28 +144,36 @@ Pause → ConfirmPopup → Title
 
 ## 프리팹
 
-| 프리팹 | 재사용 지점 |
-| :--- | :--- |
-| `DessertIcon` | 주문 카드 / 쟁반 슬롯 / 진열대 버튼 — **3곳** |
-| `MenuButton` | 4개 화면 전부 |
-| `GaugeBar` | 영업시간 표시 |
-| `ToastMessage` | 성공/오답 알림 |
-| `ConfirmPopup` | 타이틀 복귀 확인 |
+| 프리팹 | 재사용 지점 | 상태 |
+| :--- | :--- | :--- |
+| `OrderPrefab` | 주문 카드 슬롯 | 제작 완료 |
+| `ChoicePrefab` | 쟁반 슬롯 | 제작 완료 |
+| `Score` | 상단 HUD 점수 | 제작 완료 |
+| `Progress Slider_Yellow` | 영업시간 게이지 | 제작 완료 |
+| `ToastMessage` | 성공/오답 알림 | **미제작** |
 
-`DessertIcon`이 세 컨텍스트에서 재사용되는 것이 과제 요건 6번의 핵심 증거입니다. 컨텍스트별로 별도 프리팹을 만들지 말고 **하나를 크기·역할만 달리해 사용**하세요.
+`OrderPrefab`과 `ChoicePrefab`은 구조(`CakeIcon` + `CountText`)가 같으므로 **`DessertIconView` 컴포넌트를 공유**합니다. 스프라이트 교체·개수 표시 로직이 한 곳에만 존재하는 것이 요건 6번의 증거입니다. 두 프리팹을 하나로 합치지는 마세요 — 배치가 이미 끝났고 되돌리는 비용이 이득보다 큽니다.
 
 ---
 
 ## 판정 로직
 
-주문 일치 판정은 이게 전부입니다. 복잡하게 만들지 마세요.
+주문을 "남은 개수" 딕셔너리로 들고 있으면 판정이 이게 전부입니다. 복잡하게 만들지 마세요.
 
 ```
-List<DessertType> currentOrder  vs  List<DessertType> tray
-→ 품목별 개수가 모두 일치하면 성공
+Dictionary<DessertType,int> remaining   // 주문 생성 시 채움
+
+Pick(type):
+  isJudging 이면            → 무시
+  remaining[type] == 0 이면 → 실패 확정
+  remaining[type]--, tray에 추가
+  remaining 이 전부 0 이면  → 성공 확정
 ```
 
-순서는 무관합니다. 품목별 카운트를 세서 비교하면 됩니다.
+순서는 무관합니다. 개수 초과(초코 2개 주문에서 세 번째 초코)도 자동으로 걸립니다.
+
+판정이 확정되면 **바로 다음 손님으로 넘기지 마세요.** 0.8초 지연 + 진열대 버튼 잠금이
+필요합니다. 안 하면 왜 틀렸는지 볼 시간이 없고, 연타로 주문이 줄줄이 실패합니다.
 
 ---
 
@@ -172,16 +183,19 @@ List<DessertType> currentOrder  vs  List<DessertType> tray
 | :--- | :--- |
 | 마우스 클릭 | UGUI Button `onClick` |
 | 터치 | **동일 경로. 추가 구현 불필요** |
-| 키보드 Navigate | 방향키 / Tab |
-| 키보드 Submit | Enter / Space |
+| 키보드 Navigate | 방향키 / WASD (Tab은 Input System UI 모듈이 지원하지 않음) |
+| 키보드 Submit | Enter (`*/{Submit}`. Space는 기본 바인딩에 없음) |
 | 키보드 Cancel | Esc |
+| 게임패드 | Navigate 좌스틱·우스틱·D-pad / Submit A / Cancel B — **기존 UI 맵 바인딩 그대로, 추가 구현 불필요** |
 
 ### 반드시 지킬 것
 
 - **화면을 활성화할 때마다** `EventSystem.current.SetSelectedGameObject(firstButton)`을 호출하세요. 안 하면 화면 전환 후 키보드 포커스가 사라집니다. 과제 요건 5번 직결입니다.
 - 진열대 버튼은 가로 1열이므로 Navigation을 `Horizontal` 또는 `Explicit`로 지정하세요. `Automatic`은 밀집 배치에서 이동 순서가 어긋납니다.
 - 포인터 입력이 발생하면 `SetSelectedGameObject(null)`로 선택 하이라이트를 해제하세요. 안 하면 마우스로 누른 뒤 엉뚱한 버튼에 테두리가 남습니다.
-- `Cancel` 동작은 상황별로 다릅니다: Play → 일시정지 열기 / Pause → 닫기 / Popup → 팝업만 닫기
+- **위 규칙과 짝이 되는 선택 복구가 반드시 필요합니다.** `Navigate` 또는 `Submit`이 들어왔는데 선택이 `null`이면 현재 화면의 첫 버튼을 다시 선택하세요. 게임패드에는 포인터가 없어서, 이게 없으면 마우스로 한 번 클릭한 뒤 패드가 완전히 먹통이 됩니다.
+- 진열대 `CakeButton_5`의 Up을 `PauseButton`으로 배선하세요. 선택 계열 입력은 배선된 경로로만 이동할 수 있어, 배선이 없으면 보이는데 도달할 수 없는 버튼이 됩니다.
+- `Cancel` 동작은 상황별로 다릅니다: Play → 일시정지 열기 / Pause → 닫기 / Popup → 팝업만 닫기. 이 분기 하나가 Esc와 패드 B를 동시에 처리합니다.
 
 ---
 
@@ -191,10 +205,11 @@ List<DessertType> currentOrder  vs  List<DessertType> tray
 
 | 상황 | 피드백 |
 | :--- | :--- |
-| 쟁반이 비어 있음 | 제출 버튼 `interactable = false` + Disabled 색 |
+| 판정 연출 중 | 진열대 버튼 `interactable = false` + Disabled 색 |
 | 주문 성공 | Success 색 토스트 |
 | 주문 불일치 | Danger 색 토스트 |
-| 남은 시간 10초 이하 | 게이지 색을 Danger로 전환 |
+| 남은 시간 10초 이하 | 게이지가 평상시 색 ↔ Danger 색으로 **점멸** (위상은 `Time.time`이 아니라 `remainingTime`) |
+| 최종 등급 표시 | 등급 A~F별로 RankText 색이 달라짐 |
 | 버튼 hover/선택/눌림 | Normal / Highlighted / Pressed |
 | 쟁반 담김 / 빈칸 | 실선 슬롯 / 점선 슬롯 |
 
@@ -214,19 +229,21 @@ List<DessertType> currentOrder  vs  List<DessertType> tray
 
 ## 작업 순서
 
-현재 완료: 에셋 임포트, 스프라이트 5종 선별·설정, 설계 문서 작성
+**완료**: 에셋 임포트, 스프라이트 5종 선별·설정, TMP 한글 폰트(`KERISKEDU_R SDF`) 생성,
+9-Slice 설정, UI 배치, 프리팹 4종 제작, 설계 문서 작성
+(`docs/uiux-design.md`, `docs/script-design.md`)
 
 | 순서 | 작업 |
 | :--- | :--- |
-| 1 | TMP 한글 폰트 에셋 생성 (Noto Sans KR) |
-| 2 | Free Casual GUI 버튼·패널에 9-Slice Border 설정 |
-| 3 | 프리팹 5종 제작 |
-| 4 | `ScreenManager` + 4개 화면 골격 |
-| 5 | `GameState`, `OrderGenerator`, 판정 로직 |
-| 6 | HUD 바인딩 |
-| 7 | Input System 연결, Navigation 설정 |
-| 8 | 피드백 구현 |
-| 9 | 해상도 4종 테스트 (1080×1920 / 1080×2340 / 1080×2400 / 1536×2048) |
+| 1 | `ScreenManager` + 4개 화면 전환 골격, 화면별 첫 포커스 지정 |
+| 2 | `UiInputRouter` — Cancel(Esc·패드B), 포인터 시 선택 해제, **선택 복구** |
+| 3 | `GameState` 시간 + `HudController` 게이지·타이머 바인딩 |
+| 4 | `OrderGenerator` + `OrderCardView` |
+| 5 | `ShelfView` / `ShelfButton` / `TrayView` — 즉시 판정 |
+| 6 | 판정 지연·진열대 잠금 + `ToastController` (`ToastMessage` 프리팹 제작) |
+| 7 | `ResultView` + `RankTable`(등급 A~F·등급 색) + 다시하기 초기화 |
+| 8 | Navigation 배선(진열대 `Horizontal`, CakeButton_5 Up → PauseButton), PauseButton 144px, 팝업 설명문 48px |
+| 9 | 해상도 4종 + 입력 3계열(마우스·키보드·게임패드) 테스트 |
 | 10 | 체크리스트 작성, 캡처 |
 
 ---
@@ -246,7 +263,7 @@ List<DessertType> currentOrder  vs  List<DessertType> tray
 - 다시 확인한 결과:
 ```
 
-예상되는 항목: 9-Slice 미설정으로 인한 버튼 모서리 깨짐, 화면 전환 후 키보드 포커스 소실, 마우스 클릭 후 선택 하이라이트 잔존, 태블릿 비율(3:4)에서 레이아웃 붕괴, 긴 한글 라벨 넘침
+예상되는 항목: 9-Slice 미설정으로 인한 버튼 모서리 깨짐, 화면 전환 후 키보드 포커스 소실, 마우스 클릭 후 선택 하이라이트 잔존, 마우스 클릭 직후 게임패드 입력 무반응, 진열대에서 상단 HUD로 이동 불가, 태블릿 비율(3:4)에서 레이아웃 붕괴, 긴 한글 라벨 넘침
 
 ---
 
@@ -259,8 +276,8 @@ List<DessertType> currentOrder  vs  List<DessertType> tray
 - [ ] HUD 3개 이상이 실제 게임 상태와 연결 (시간·점수·주문 안내·처리/실패)
 - [ ] 화면 3개 이상 + 버튼으로 전환 가능
 - [ ] 마우스로 UI 조작 가능
-- [ ] 키보드로 Navigate / Submit / Cancel 중 2개 이상 확인 가능
+- [ ] 키보드·게임패드로 Navigate / Submit / Cancel 확인 가능
 - [ ] 재사용 UI Prefab 2개 이상
-- [ ] 피드백 2개 이상 (버튼 상태·알림·비활성화·색 변화)
+- [ ] 피드백 2개 이상 (버튼 상태·알림·비활성화·색 변화 2종)
 - [ ] 해상도 변경 테스트 수행
 - [ ] 체크리스트에 기대/실제/수정/재확인 기록
