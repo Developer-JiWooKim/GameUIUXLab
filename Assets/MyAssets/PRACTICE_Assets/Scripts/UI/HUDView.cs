@@ -40,7 +40,7 @@ namespace Assets.MyAssets.PRACTICE_Assets.Scripts.UI
         private void Refresh()
         {
             scoreText.text = _score.ToString();
-            timerText.text = _remainTime.ToString("F1");
+            timerText.text = _remainTime.ToString("F0");
             hpFillImage.fillAmount = _health;
         }
     }
