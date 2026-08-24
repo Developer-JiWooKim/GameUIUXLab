@@ -4,27 +4,24 @@ using UnityEngine;
 
 namespace Assets.MyAssets.PORTFOLIO_Assets.Scripts.Core
 {
-    // 이 프로젝트에서 게임 데이터를 소유하는 유일한 스크립트. GamePlay 에 붙인다.
-    // View 는 이벤트를 받아 표시만 하고, 값을 바꾸는 주체는 언제나 여기다.
     public class GamePlayController : MonoBehaviour
     {
         [Header("게임 플레이 시간 설정")]
         [SerializeField] private float playTimeSeconds = 120f;
 
-        [Header("주문")]
+        [Header("주문 생성기")]
         [SerializeField] private OrderGenerator orderGenerator;
 
-        [Tooltip("쟁반 슬롯 수. OrderGenerator 의 orderCount 와 같아야 한다")]
+        [Header("쟁반 슬롯 수")]
         [SerializeField] private int trayCapacity = 3;
 
-        [Header("점수")]
+        [Header(" 성공 시 획득 점수")]
         [SerializeField] private int scorePerSuccess = 100;
 
-        [Tooltip("실패 시 감점. 점수는 0 아래로 내려가지 않는다")]
+        [Header("실패 시 잃는 점수")]
         [SerializeField] private int scorePenaltyPerFail = 20;
 
         [Header("판정 연출")]
-        [Tooltip("판정 후 다음 손님까지의 간격(초). 이 동안 진열대가 잠긴다")]
         [SerializeField] private float judgeDelaySeconds = 0.8f;
 
         private float remainingTime;
@@ -35,15 +32,16 @@ namespace Assets.MyAssets.PORTFOLIO_Assets.Scripts.Core
         private int failCount;
         private int customerNumber;
 
-        private List<DessertType> currentOrder = new List<DessertType>();
-        private readonly List<DessertType> tray = new List<DessertType>();
+        private List<DessertType> currentOrder = new();
+        private readonly List<DessertType> tray = new();
 
-        // 주문에서 아직 안 담은 개수. 즉시 판정의 핵심이라 List 와 별도로 들고 있는다.
-        private readonly Dictionary<DessertType, int> remaining = new Dictionary<DessertType, int>();
+        /// <summary>주문에서 아직 안 담은 개수.</summary>
+        private readonly Dictionary<DessertType, int> remaining = new();
 
+        /// <summary>주문과 쟁반에 담은 종류가 일치하는지 판정 여부.</summary>
         private bool isJudging;
 
-        // 판정 대기가 끝났을 때 그 사이 새 판이 시작됐는지 구분하는 표식.
+        /// <summary>판정 대기가 끝났을 때 그 사이 새 판이 시작됐는지 구분하는 표식.</summary>
         private int judgeToken;
 
         public float RemainingTime => remainingTime;
@@ -89,8 +87,6 @@ namespace Assets.MyAssets.PORTFOLIO_Assets.Scripts.Core
 
         private void Awake()
         {
-            // 주문 개수가 쟁반 칸 수보다 많으면 담을 자리가 없어 클리어가 불가능해진다.
-            // 조용히 게임이 안 끝나는 형태로 나타나므로 시작할 때 알려 준다.
             if (orderGenerator != null && orderGenerator.OrderCount != trayCapacity)
             {
                 Debug.LogWarning(name + ": 주문 개수(" + orderGenerator.OrderCount

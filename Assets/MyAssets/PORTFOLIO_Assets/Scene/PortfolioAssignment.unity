@@ -865,11 +865,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5881114420730841804, guid: 700434f6f994d9140a5886fe6d9739cd, type: 3}
       propertyPath: m_AnchorMax.x
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 5881114420730841804, guid: 700434f6f994d9140a5886fe6d9739cd, type: 3}
       propertyPath: m_AnchorMax.y
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8394187614605513352, guid: 700434f6f994d9140a5886fe6d9739cd, type: 3}
       propertyPath: m_Value
@@ -1442,6 +1442,7 @@ GameObject:
   - component: {fileID: 375985902}
   - component: {fileID: 375985901}
   - component: {fileID: 375985903}
+  - component: {fileID: 375985904}
   m_Layer: 5
   m_Name: Screen_Result
   m_TagString: Untagged
@@ -1523,6 +1524,27 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Assets.MyAssets.PORTFOLIO_Assets.Scripts.States.ResultState
   firstSelected: {fileID: 1297222024}
+--- !u!114 &375985904
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 375985899}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bddd5205b4238c847b578dd97e732684, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Assets.MyAssets.PORTFOLIO_Assets.Scripts.UI.ResultView
+  gamePlay: {fileID: 534077866}
+  rankTable: {fileID: 1579372832}
+  successText: {fileID: 258606399}
+  failText: {fileID: 260975999}
+  scoreText: {fileID: 654129864}
+  rankText: {fileID: 1811960917}
+  successPrefix: "\uC131\uACF5 : "
+  failPrefix: "\uC2E4\uD328 : "
+  scorePrefix: "\uC810\uC218 : "
 --- !u!1 &379503349
 GameObject:
   m_ObjectHideFlags: 0
@@ -2218,7 +2240,9 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Start!
+  m_text: 'Time
+
+    Out!!'
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: f8802cdf5316acb45b71a160083153ee, type: 2}
   m_sharedMaterial: {fileID: -6269700506862428983, guid: f8802cdf5316acb45b71a160083153ee, type: 2}
@@ -2427,7 +2451,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 383dfc3f69fd35a4f808c1173380688b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Assets.MyAssets.PORTFOLIO_Assets.Scripts.Core.GamePlayController
-  playTimeSeconds: 15
+  playTimeSeconds: 120
   orderGenerator: {fileID: 2025598864}
   trayCapacity: 3
   scorePerSuccess: 100
@@ -2888,7 +2912,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &649720219
 RectTransform:
   m_ObjectHideFlags: 0
@@ -4364,7 +4388,7 @@ MonoBehaviour:
     m_Top: 0
     m_Bottom: 0
   m_ChildAlignment: 4
-  m_Spacing: 0
+  m_Spacing: -300
   m_ChildForceExpandWidth: 1
   m_ChildForceExpandHeight: 1
   m_ChildControlWidth: 0
@@ -5131,7 +5155,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 0, y: 0}
+  m_SizeDelta: {x: 20, y: 20}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!225 &1385372660
 CanvasGroup:
@@ -6306,6 +6330,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1579372831}
+  - component: {fileID: 1579372832}
   m_Layer: 5
   m_Name: RankTable
   m_TagString: Untagged
@@ -6332,6 +6357,39 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &1579372832
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1579372830}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5577ff50f18487c40afcc03fe1e0ac4d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Assets.MyAssets.PORTFOLIO_Assets.Scripts.Core.RankTable
+  successWeight: 100
+  failPenalty: 50
+  rules:
+  - label: A
+    minRankScore: 2800
+    color: {r: 1, g: 0.824, b: 0.29, a: 1}
+  - label: B
+    minRankScore: 2200
+    color: {r: 0.435, g: 0.82, b: 1, a: 1}
+  - label: C
+    minRankScore: 1600
+    color: {r: 0.494, g: 0.827, b: 0.494, a: 1}
+  - label: D
+    minRankScore: 1000
+    color: {r: 1, g: 0.69, b: 0.404, a: 1}
+  - label: E
+    minRankScore: 400
+    color: {r: 1, g: 0.541, b: 0.42, a: 1}
+  - label: F
+    minRankScore: -2147483648
+    color: {r: 0.604, g: 0.627, b: 0.651, a: 1}
 --- !u!1 &1615351805
 GameObject:
   m_ObjectHideFlags: 0
@@ -6404,8 +6462,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: -39}
-  m_SizeDelta: {x: 500, y: 350}
+  m_AnchoredPosition: {x: 0, y: -30.097}
+  m_SizeDelta: {x: 750, y: 450}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1628763932
 MonoBehaviour:
@@ -6840,7 +6898,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &1695488691
 RectTransform:
   m_ObjectHideFlags: 0
@@ -6932,12 +6990,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Assets.MyAssets.PORTFOLIO_Assets.Scripts.UI.CountdownView
   countPanel: {fileID: 649720218}
   countText: {fileID: 514540839}
-  steps:
+  introSteps:
   - 3
   - 2
   - 1
   - Start!
-  stepSeconds: 0.7
+  introStepSeconds: 0.7
+  timeoutMessage: Time\nOut!!
+  timeoutSeconds: 1
 --- !u!114 &1707540396 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 3994500710399131056, guid: 700434f6f994d9140a5886fe6d9739cd, type: 3}
@@ -7681,7 +7741,7 @@ MonoBehaviour:
     m_Top: 0
     m_Bottom: 0
   m_ChildAlignment: 4
-  m_Spacing: 0
+  m_Spacing: -300
   m_ChildForceExpandWidth: 1
   m_ChildForceExpandHeight: 1
   m_ChildControlWidth: 0

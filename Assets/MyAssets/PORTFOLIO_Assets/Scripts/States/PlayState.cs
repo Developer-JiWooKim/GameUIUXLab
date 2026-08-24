@@ -15,6 +15,7 @@ namespace Assets.MyAssets.PORTFOLIO_Assets.Scripts.States
     /// (평면 FSM 이었다면 여기서 재시작 버그가 났을 자리다.)
     ///
     /// 진입 순서: Prepare(초기화, 시계 정지) → 카운트다운 → StartGame(시계 시작)
+    /// 종료 순서: OnGameOver → Timeout!! 1초 → ShowResult(페이드 전환)
     ///
     /// 버튼 onClick 배선:
     ///   PauseButton → ScreenFlowController.ShowPause()
@@ -24,14 +25,17 @@ namespace Assets.MyAssets.PORTFOLIO_Assets.Scripts.States
         [Header("게임 데이터")]
         [SerializeField] private GamePlayController gamePlay;
 
-        [Header("시작 카운트다운")]
+        [Header("오버레이 문구")]
         [SerializeField] private CountdownView countdown;
 
-        [Tooltip("카운트다운 동안 잠글 일시정지 버튼. 비워도 동작한다")]
+        [Tooltip("연출 중 잠글 일시정지 버튼. 비워도 동작한다")]
         [SerializeField] private Button pauseButton;
 
-        private CancellationTokenSource introCts;
-        private bool isCountingDown;
+        private CancellationTokenSource sequenceCts;
+
+        // 시작 카운트다운과 종료 알림을 하나로 묶은 이유: 둘 다 "연출이 도는 동안 조작을
+        // 받지 않는다" 는 같은 규칙이 적용된다. 플래그를 두 개 두면 한쪽만 검사하는 실수가 난다.
+        private bool isPlayingSequence;
 
         private void Awake()
         {
@@ -41,7 +45,7 @@ namespace Assets.MyAssets.PORTFOLIO_Assets.Scripts.States
             }
         }
 
-        private void OnDestroy() => CancelIntro();
+        private void OnDestroy() => CancelSequence();
 
         public override void Enter()
         {
@@ -62,7 +66,7 @@ namespace Assets.MyAssets.PORTFOLIO_Assets.Scripts.States
         {
             // 카운트다운 도중에 나가면, 남아 있던 대기가 끝난 뒤 StartGame() 이 불려
             // 타이틀 화면에서 시계가 도는 상태가 된다. 반드시 먼저 끊는다.
-            CancelIntro();
+            CancelSequence();
 
             if (gamePlay == null)
             {
@@ -79,7 +83,8 @@ namespace Assets.MyAssets.PORTFOLIO_Assets.Scripts.States
         {
             // 카운트다운 중 일시정지를 허용하면 팝업 뒤에서 숫자가 계속 흐르고,
             // 닫는 순간 카운트가 끝나 버린다. 3초는 그냥 기다리게 한다.
-            if (isCountingDown)
+            // 종료 알림 중에도 같다 — 이미 끝난 판을 일시정지할 이유가 없다.
+            if (isPlayingSequence)
             {
                 return;
             }
@@ -89,17 +94,13 @@ namespace Assets.MyAssets.PORTFOLIO_Assets.Scripts.States
 
         private async void RunIntro()
         {
-            CancelIntro();
-            introCts = new CancellationTokenSource();
-
-            isCountingDown = true;
-            SetPauseInteractable(false);
+            BeginSequence();
 
             try
             {
                 if (countdown != null)
                 {
-                    await countdown.Play(introCts.Token);
+                    await countdown.PlayIntro(sequenceCts.Token);
                 }
             }
             catch (OperationCanceledException)
@@ -109,27 +110,75 @@ namespace Assets.MyAssets.PORTFOLIO_Assets.Scripts.States
             }
             finally
             {
-                isCountingDown = false;
-                SetPauseInteractable(true);
+                EndSequence();
             }
 
             gamePlay.StartGame();
         }
 
-        private void CancelIntro()
+        /// <summary>
+        /// 영업시간 종료. 시간이 0 이 되는 순간 화면을 바꾸지 않는다 —
+        /// 마지막 판정 결과를 볼 틈이 없고, 무엇 때문에 끝났는지도 전달되지 않는다.
+        /// Timeout!! 을 1초 보여준 뒤 페이드로 넘긴다.
+        ///
+        /// 화면 전환을 ScreenFlowController 가 아니라 여기서 트리거하는 이유는,
+        /// 화면 전환기가 게임 규칙을 구독하기 시작하면 두 책임이 섞이기 때문이다.
+        /// </summary>
+        private void HandleGameOver() => RunTimeout();
+
+        private async void RunTimeout()
         {
-            if (introCts == null)
+            BeginSequence();
+
+            try
+            {
+                if (countdown != null)
+                {
+                    await countdown.PlayTimeout(sequenceCts.Token);
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                // 알림 중에 화면을 떠났다(타이틀로 나감). 결과 화면으로 보내면 안 된다.
+                return;
+            }
+            finally
+            {
+                EndSequence();
+            }
+
+            Screens.ShowResult();
+        }
+
+        private void BeginSequence()
+        {
+            CancelSequence();
+            sequenceCts = new CancellationTokenSource();
+
+            isPlayingSequence = true;
+            SetPauseInteractable(false);
+        }
+
+        private void EndSequence()
+        {
+            isPlayingSequence = false;
+            SetPauseInteractable(true);
+        }
+
+        private void CancelSequence()
+        {
+            if (sequenceCts == null)
             {
                 return;
             }
 
-            introCts.Cancel();
-            introCts.Dispose();
-            introCts = null;
+            sequenceCts.Cancel();
+            sequenceCts.Dispose();
+            sequenceCts = null;
         }
 
         /// <summary>
-        /// 카운트다운 중 잠금. CountPanel 이 화면 전체를 덮어 클릭은 이미 막히지만,
+        /// 연출 중 잠금. CountPanel 이 화면 전체를 덮어 클릭은 이미 막히지만,
         /// 키보드·게임패드 Submit 은 패널을 통과하므로 버튼 자체를 잠가야 한다.
         /// </summary>
         private void SetPauseInteractable(bool interactable)
@@ -138,15 +187,6 @@ namespace Assets.MyAssets.PORTFOLIO_Assets.Scripts.States
             {
                 pauseButton.interactable = interactable;
             }
-        }
-
-        /// <summary>
-        /// 영업시간 종료. 화면 전환을 ScreenFlowController 가 아니라 여기서 트리거하는 이유는,
-        /// 화면 전환기가 게임 규칙을 구독하기 시작하면 두 책임이 섞이기 때문이다.
-        /// </summary>
-        private void HandleGameOver()
-        {
-            Screens.ShowResult();
         }
     }
 }
