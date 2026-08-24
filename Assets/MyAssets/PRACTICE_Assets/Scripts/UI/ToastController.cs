@@ -23,7 +23,8 @@ namespace Assets.MyAssets.PRACTICE_Assets.Scripts.UI
                 actionOnDestroy: OnDestroyToast,
                 collectionCheck: true,
                 defaultCapacity: defaultCapacity,
-                maxSize: maxPoolSize);
+                maxSize: maxPoolSize
+                );
         }
 
         private void OnDestroy()
