@@ -223,6 +223,7 @@ GameObject:
   - component: {fileID: 5364733246383009084}
   - component: {fileID: 6583953955499655288}
   - component: {fileID: 8058552720129224971}
+  - component: {fileID: 420521249822356042}
   m_Layer: 5
   m_Name: ChoicePrefab
   m_TagString: Untagged
@@ -289,3 +290,17 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
+--- !u!114 &420521249822356042
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6451816384185924541}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e6efdfc653e8b841be5073bd426d25f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Assets.MyAssets.PORTFOLIO_Assets.Scripts.UI.DessertIconView
+  iconImage: {fileID: 579033108954380232}
+  countText: {fileID: 2465227161397101923}

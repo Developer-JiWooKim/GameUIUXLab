@@ -8,11 +8,14 @@
 제한된 영업시간(기본 120초) 안에 손님의 주문을 정확히 처리해 점수를 얻는 캐주얼 세로형 게임입니다.
 
 ```
-손님 1명 등장 → 주문 카드 표시 → 진열대에서 디저트를 누름 → 누른 즉시 판정
-  ├ 주문에 있는 품목 → 쟁반에 담김. 주문을 다 채우면 점수 획득, 처리 +1
-  └ 주문에 없는 품목 → 그 자리에서 실패, 실패 +1
+손님 1명 등장 → 주문 카드 표시(5종 중 중복 허용 3개) → 진열대에서 디저트를 누름 → 누른 즉시 판정
+  ├ 주문에 있는 품목 → 쟁반에 담김. 주문 3개를 다 채우면 +100점, 처리 +1
+  └ 주문에 없는 품목 → 그 자리에서 실패, −20점(0 하한), 실패 +1
 → 영업시간 120초(인스펙터 조정 가능) 종료 → 결과 화면
 ```
+
+점수는 성공 +100 / 실패 −20이며 **0 아래로 내려가지 않습니다.**
+결과 화면의 등급은 점수가 아니라 성공·실패 **건수**로 따로 계산합니다.
 
 마감은 2026-08-26입니다. **완성도보다 요건 충족이 우선입니다.**
 
@@ -24,7 +27,7 @@
 
 - 난이도 상승 곡선, 시간에 따른 스폰 가속
 - 콤보, 보너스 점수, 배수 시스템
-- 게임 중 `score`에 실패 감점 (등급 산식은 결과 화면 계산 전용. HUD 점수는 성공 시 가산만)
+- 점수 감소를 알리는 별도 연출 (점수 텍스트 점멸·흔들림 등. 실패 토스트가 이미 그 역할을 합니다)
 - 시간이 줄수록 빨라지는 가속 점멸 (초당 3회 초과는 광과민성 발작 기준에 걸립니다)
 - 손님 캐릭터 스프라이트, 표정, 등장 애니메이션
 - 최고 점수 저장, `PlayerPrefs`, 세이브/로드
@@ -100,27 +103,39 @@ public enum DessertType
 **데이터와 표시를 분리합니다.** 이건 과제 요건("HUD 표시 값이 실제 게임 상태와 연결되어 있다")과 직결되므로 반드시 지켜주세요.
 
 ```
-GameState        ← 실제 데이터 소유 (점수, 시간, 주문, 쟁반)
+GamePlayController        ← 실제 데이터 소유 (점수, 시간, 주문, 쟁반)
    ↓ 읽기
-UI Controller    ← GameState를 읽어 View에 반영
+UI Controller    ← GamePlayController를 읽어 View에 반영
    ↓
 UGUI View        ← TextMeshProUGUI, Image, Button
 ```
 
-UI 스크립트가 점수 같은 게임 데이터를 직접 소유하면 안 됩니다. `HudController`는 `GameState.score`를 읽어 표시할 뿐이고, 점수를 바꾸는 주체는 `GameState`입니다.
+UI 스크립트가 점수 같은 게임 데이터를 직접 소유하면 안 됩니다. `HudController`는 `GamePlayController.score`를 읽어 표시할 뿐이고, 점수를 바꾸는 주체는 `GamePlayController`입니다.
+
+### 씬 오브젝트 배치
+
+한 오브젝트에 컴포넌트를 몰아 붙이지 마세요.
+
+| 오브젝트 | 붙는 것 |
+| :--- | :--- |
+| `GamePlay` | `GamePlayController`, `OrderGenerator`, `DessertTable`, `RankTable` |
+| `UIRoot` | `ScreenFlowController`, `UiInputRouter` |
+| 각 패널 | View 스크립트 (`HudController`, `OrderCardView`, `TrayView`, `ToastController`, `ShelfView`, `CountdownView`) |
+
+`GamePlay`를 `Screen_Play`의 자식으로 두지 마세요. 결과 화면에서 `Screen_Play`가 꺼진 뒤에도 `ResultView`가 최종 점수를 읽어야 합니다. 데이터 소유자의 수명이 화면 활성 상태에 묶이면 원인 찾기 어려운 버그가 생깁니다.
 
 ### 스크립트 구성
 
 | 스크립트 | 역할 |
 | :--- | :--- |
-| `GameState` | score, remainingTime, currentOrder, remaining, tray, successCount, failCount, isJudging 보유 |
-| `OrderGenerator` | 무작위 주문 생성 (품목 1~3종, 각 1~2개) |
-| `ScreenManager` | 화면 패널 전환, 전환 시 초기 선택 버튼 지정 |
-| `HudController` | GameState 값을 HUD에 반영 |
+| `GamePlayController` | score, remainingTime, currentOrder, remaining, tray, successCount, failCount, isJudging 보유 |
+| `OrderGenerator` | 무작위 주문 생성 (5종 중 중복 허용으로 3개) |
+| `ScreenFlowController` | 화면 패널 전환, 전환 시 초기 선택 버튼 지정 |
+| `HudController` | GamePlayController 값을 HUD에 반영 |
 | `OrderCardView` | 현재 주문을 DessertIcon으로 표시 |
 | `TrayView` | 쟁반 슬롯 표시 (표시 전용. 클릭을 받지 않음) |
 | `ShelfView` | 진열대 버튼 입력 수신, 판정 중 버튼 잠금 |
-| `ToastController` | 알림 메시지 표시·소멸 |
+| `ToastController` | 판정 알림 문구 표시·소멸 (ChoiceListPanel 에 붙는다) |
 | `RankTable` | 성공·실패 건수 → 등급 A~F + 등급 색 판정 |
 
 ### 화면
@@ -150,9 +165,12 @@ Pause → ConfirmPopup → Title
 | `ChoicePrefab` | 쟁반 슬롯 | 제작 완료 |
 | `Score` | 상단 HUD 점수 | 제작 완료 |
 | `Progress Slider_Yellow` | 영업시간 게이지 | 제작 완료 |
-| `ToastMessage` | 성공/오답 알림 | **미제작** |
 
 `OrderPrefab`과 `ChoicePrefab`은 구조(`CakeIcon` + `CountText`)가 같으므로 **`DessertIconView` 컴포넌트를 공유**합니다. 스프라이트 교체·개수 표시 로직이 한 곳에만 존재하는 것이 요건 6번의 증거입니다. 두 프리팹을 하나로 합치지는 마세요 — 배치가 이미 끝났고 되돌리는 비용이 이득보다 큽니다.
+
+판정 알림(`ToastMessage`)은 **프리팹으로 만들지 않습니다.** 판정 잠금 0.8초가 표시 시간 0.5초보다 길어 토스트가 동시에 둘 존재할 수 없으므로, `ChoiceListPanel` 아래 텍스트 하나를 켜고 끕니다. 생성·파괴가 없으니 오브젝트 풀 이야기도 나오지 않습니다. 재사용 프리팹 요건은 위 4개로 이미 충족입니다.
+
+진열대 버튼(`CakeButton_1~5`)도 프리팹으로 만들지 않습니다. 5개가 스프라이트·`ShelfButton.type`·Explicit Navigation 이 전부 달라 공유할 것이 거의 없고, 프리팹 애셋은 씬 참조(Navigation 대상)를 담을 수 없어 실수로 Apply 하면 배선이 한꺼번에 날아갑니다. 5개를 동시에 고칠 일은 하이라키 다중 선택으로 처리하세요.
 
 ---
 
@@ -235,12 +253,12 @@ Pick(type):
 
 | 순서 | 작업 |
 | :--- | :--- |
-| 1 | `ScreenManager` + 4개 화면 전환 골격, 화면별 첫 포커스 지정 |
-| 2 | `UiInputRouter` — Cancel(Esc·패드B), 포인터 시 선택 해제, **선택 복구** |
-| 3 | `GameState` 시간 + `HudController` 게이지·타이머 바인딩 |
-| 4 | `OrderGenerator` + `OrderCardView` |
-| 5 | `ShelfView` / `ShelfButton` / `TrayView` — 즉시 판정 |
-| 6 | 판정 지연·진열대 잠금 + `ToastController` (`ToastMessage` 프리팹 제작) |
+| ~~1~~ | ~~`ScreenFlowController` + 4개 화면 전환 골격, 화면별 첫 포커스 지정~~ 완료 |
+| ~~2~~ | ~~`UiInputRouter` — Cancel(Esc·패드B), 포인터 시 선택 해제, **선택 복구**~~ 완료 (인스펙터 배선 남음) |
+| ~~3~~ | ~~`GamePlayController` 시간 + `HudController` 게이지·타이머 바인딩~~ 완료 (+ 시작 카운트다운) |
+| ~~4~~ | ~~`OrderGenerator` + `OrderCardView`~~ 완료 (인스펙터 배선 남음) |
+| ~~5~~ | ~~`ShelfView` / `ShelfButton` / `TrayView` — 즉시 판정~~ 완료 (인스펙터 배선 남음) + HUD 점수·처리수 바인딩 |
+| ~~6~~ | ~~판정 지연·진열대 잠금 + `ToastController`~~ 완료 (인스펙터 배선 남음. ToastMessage 는 프리팹 아님 — 텍스트 1개) |
 | 7 | `ResultView` + `RankTable`(등급 A~F·등급 색) + 다시하기 초기화 |
 | 8 | Navigation 배선(진열대 `Horizontal`, CakeButton_5 Up → PauseButton), PauseButton 144px, 팝업 설명문 48px |
 | 9 | 해상도 4종 + 입력 3계열(마우스·키보드·게임패드) 테스트 |

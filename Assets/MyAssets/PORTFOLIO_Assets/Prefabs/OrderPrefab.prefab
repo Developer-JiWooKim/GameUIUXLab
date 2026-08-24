@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 3391880213573156817}
   - component: {fileID: 5841824143122325586}
   - component: {fileID: 7439305490024384876}
+  - component: {fileID: 5028027183013207175}
   m_Layer: 5
   m_Name: OrderPrefab
   m_TagString: Untagged
@@ -77,6 +78,20 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
+--- !u!114 &5028027183013207175
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4289401947278642518}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e6efdfc653e8b841be5073bd426d25f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Assets.MyAssets.PORTFOLIO_Assets.Scripts.UI.DessertIconView
+  iconImage: {fileID: 2070236526008473827}
+  countText: {fileID: 5857491621542720882}
 --- !u!1 &6338083564443960887
 GameObject:
   m_ObjectHideFlags: 0
