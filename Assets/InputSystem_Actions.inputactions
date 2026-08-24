@@ -593,7 +593,7 @@
                     "name": "ShelfSlot",
                     "type": "Button",
                     "id": "6bddb9a1-0a4b-4ebd-9f9e-2cda6f59bda3",
-                    "expectedControlType": "Button",
+                    "expectedControlType": "",
                     "processors": "",
                     "interactions": "",
                     "initialStateCheck": false,

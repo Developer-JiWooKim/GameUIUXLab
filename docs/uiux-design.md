@@ -267,7 +267,7 @@ UI 입력밖에 없는 게임이므로 새 맵을 만들지 않는다. `Player` 
 | `Point` / `Click` | `<Mouse>/position`, 마우스 좌클릭, 터치 | 없음 (포인터 없음) | 모듈이 처리 → Button `onClick` |
 | `Navigate` | 방향키 / WASD 2D 컴포짓 | `leftStick`, `rightStick`, `dpad` | 모듈이 처리 |
 | `Submit` | `*/{Submit}` | `buttonSouth` (A) | 모듈이 처리 |
-| `Cancel` | `*/{Cancel}` | `buttonEast` (B) | **`UiInputRouter` 가 직접 구독** |
+| `Cancel` | `*/{Cancel}` | `buttonEast` (B) | **`UIInputRouter` 가 직접 구독** |
 
 **게임패드 지원에 새 바인딩 작업이 필요 없다.** `Submit` / `Cancel` 의 바인딩 경로
 `*/{Submit}` · `*/{Cancel}` 는 컨트롤 스킴 그룹에 `Gamepad` 가 포함되어 있고, 게임패드 레이아웃의
@@ -618,7 +618,7 @@ Input Debugger 의 가상 장치나 Device Simulator 로 대체한다.
 
 ```
 1. 화면 전환 골격 (ScreenFlowController) + 포커스 지정
-2. Cancel(Esc / 패드 B) 처리 + 선택 복구 (UiInputRouter)
+2. Cancel(Esc / 패드 B) 처리 + 선택 복구 (UIInputRouter)
 3. 시간 + HUD 바인딩
 4. 주문 생성 + 주문 카드 표시
 5. 진열대 입력 → 즉시 판정 → 쟁반 표시
