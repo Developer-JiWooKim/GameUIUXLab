@@ -51,6 +51,40 @@
 - 수정 내용: `navigateDeadzone`(기본 0.2) 미만의 입력은 무시한다.
 - 다시 확인한 결과:
 
+### EventSystem 이 프로젝트 액션 에셋이 아니라 패키지 기본 에셋을 보고 있었음
+
+- 기대 결과: 키보드·게임패드 조작이 `Assets/InputSystem_Actions` 의 UI 맵 바인딩대로 동작하고,
+  `EventSystem` 과 `UIInputRouter` 가 같은 액션을 공유한다.
+- 실제 결과: 겉보기에는 정상 동작한다. 그러나 `InputSystem_Actions` 의 UI 맵을 고쳐도
+  포커스 이동·Submit 에는 반영되지 않고 라우터만 반응한다. 입력 표에 적어 둔 바인딩과
+  실제로 화면을 움직이는 바인딩이 다른 상태였다.
+- 원인: `InputSystemUIInputModule` 을 EventSystem 에 붙이면 Unity 가 `m_ActionsAsset` 에
+  패키지 내장 `DefaultInputActions`(guid `ca9f5fa9…`)를 기본값으로 꽂아 둔다. 이 값을 한 번도
+  바꾸지 않아 **모듈은 패키지 에셋을, 라우터는 프로젝트 에셋(guid `052faaac…`)을** 보고 있었다.
+  두 에셋의 UI 맵 바인딩이 아직 같았고, 프로젝트 에셋은 Project-wide Actions 로 등록돼 있어
+  런타임에 자동으로 Enable 된다. 그래서 어느 쪽도 죽지 않아 증상으로 드러나지 않았다.
+- 수정 내용: EventSystem 의 `Actions Asset` 에 `InputSystem_Actions` 를 지정했다.
+  UI 맵의 액션 이름 10개가 모두 같아 나머지 필드는 Unity 가 이름으로 맞춰 채운다.
+  씬에 남은 `DefaultInputActions` 참조가 0 인 것으로 확인했다.
+- 다시 확인한 결과:
+
+
+### 진열대에서 상단 PauseButton 으로 이동 불가
+
+- 기대 결과: 키보드 방향키·게임패드로 진열대를 좌우로 훑고, 위로 빠져나가 일시정지 버튼에
+  도달할 수 있다.
+- 실제 결과: 진열대 안에서만 맴돌고 `PauseButton` 에 선택이 닿지 않는다. 마우스로는 눌리는데
+  선택 계열 입력으로는 존재하지 않는 버튼이 된다.
+- 원인: 씬의 Selectable 14개가 전부 Navigation `Automatic` 이었다. Automatic 은 방향과 거리로
+  다음 대상을 추정하는데, 진열대 5개가 200px 간격으로 밀집해 있고 `PauseButton` 은 화면
+  반대쪽 위에 떨어져 있어 후보로 잡히지 않는다. 선택 계열 입력은 배선된 경로로만 이동한다.
+- 수정 내용: 진열대 5개를 `Explicit`(m_Mode 4) 로 바꾸고 좌우를 배치 순서대로 연결했다
+  (Choco ↔ Kiwi ↔ Rectangular ↔ CupCake ↔ CakePiece. 하이라키 순서와 화면 x 좌표
+  −400→400 이 일치하는 것을 확인하고 그대로 이었다).
+  맨 오른쪽 `CakeButton_CakePiece` 의 Up 만 `PauseButton` 으로 걸었다. 5개 전부 거는 대신
+  하나만 건 이유는 도달 가능성만 확보하면 요건이 충족되고, 배선이 늘수록 어긋날 자리도
+  늘기 때문이다. 첫 포커스가 맨 왼쪽이므로 Right ×4 → Up 으로 닿는다.
+- 다시 확인한 결과:
 ---
 
 ## HUD

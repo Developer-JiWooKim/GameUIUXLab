@@ -6,7 +6,7 @@ namespace Assets.MyAssets.PORTFOLIO_Assets.Scripts.UI
     [DisallowMultipleComponent]
     public class AspectRatioLetterbox : MonoBehaviour
     {
-        [Header("목표 화면 비율")]
+        [Header("고정 화면 해상도")]
         [SerializeField] private Vector2 targetAspect = new Vector2(1080f, 1920f);
 
         private Camera camera;

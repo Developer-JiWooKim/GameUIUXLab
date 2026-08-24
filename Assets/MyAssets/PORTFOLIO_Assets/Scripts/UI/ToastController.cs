@@ -38,17 +38,11 @@ namespace Assets.MyAssets.PORTFOLIO_Assets.Scripts.UI
         [SerializeField] private string failMessage = "실패..";
 
         [Header("성공 색")]
-        [Tooltip("Splash 배경에 곱해지는 색. 연하게 둘 것")]
         [SerializeField] private Color successColor = new Color(0.75f, 0.95f, 0.78f);
-
-        [Tooltip("배경과 같은 계열의 진한 색. 배경과 완전히 같게 두면 글자가 묻힌다")]
         [SerializeField] private Color successTextColor = new Color(0.12f, 0.42f, 0.20f);
 
         [Header("실패 색")]
-        [Tooltip("Splash 배경에 곱해지는 색. 연하게 둘 것")]
         [SerializeField] private Color failColor = new Color(0.99f, 0.80f, 0.78f);
-
-        [Tooltip("배경과 같은 계열의 진한 색. 배경과 완전히 같게 두면 글자가 묻힌다")]
         [SerializeField] private Color failTextColor = new Color(0.64f, 0.13f, 0.13f);
 
         [Header("표시 시간")]

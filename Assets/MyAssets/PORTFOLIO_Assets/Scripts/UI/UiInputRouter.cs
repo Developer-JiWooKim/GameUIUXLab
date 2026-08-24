@@ -19,7 +19,7 @@ namespace Assets.MyAssets.PORTFOLIO_Assets.Scripts.UI
     /// 선택 해제·복구를 콜백에서 바로 하지 않고 LateUpdate 로 미루는 이유는
     /// ApplyPendingSelection 주석 참고. 프레임 순서 때문에 반드시 필요하다.
     /// </summary>
-    public class UiInputRouter : MonoBehaviour
+    public class UIInputRouter : MonoBehaviour
     {
         [Header("참조")]
         [SerializeField] private ScreenFlowController screenFlow;

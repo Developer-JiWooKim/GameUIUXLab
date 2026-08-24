@@ -28,7 +28,7 @@ namespace Assets.MyAssets.PORTFOLIO_Assets.Scripts.States
         [Header("오버레이 문구")]
         [SerializeField] private CountdownView countdown;
 
-        [Tooltip("연출 중 잠글 일시정지 버튼. 비워도 동작한다")]
+        [Header("연출 중 잠글 일시정지 버튼")]
         [SerializeField] private Button pauseButton;
 
         private CancellationTokenSource sequenceCts;

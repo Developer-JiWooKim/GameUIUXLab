@@ -205,6 +205,7 @@ Pick(type):
 | 터치 | **동일 경로. 추가 구현 불필요** |
 | 키보드 Navigate | 방향키 / WASD (Tab은 Input System UI 모듈이 지원하지 않음) |
 | 키보드 Submit | Enter (`*/{Submit}`. Space는 기본 바인딩에 없음) |
+| 키보드 숫자 1~5 | 진열대 버튼을 곧바로 누름 (`UI/ShelfSlot`). `ShelfView` 가 해당 버튼에 Submit 이벤트를 보내므로 판정 잠금·눌림 피드백이 클릭과 동일하게 적용됨 |
 | 키보드 Cancel | Esc |
 | 게임패드 | Navigate 좌스틱·우스틱·D-pad / Submit A / Cancel B — **기존 UI 맵 바인딩 그대로, 추가 구현 불필요** |
 

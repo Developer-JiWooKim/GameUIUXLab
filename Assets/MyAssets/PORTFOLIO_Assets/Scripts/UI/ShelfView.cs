@@ -1,14 +1,10 @@
 using Assets.MyAssets.PORTFOLIO_Assets.Scripts.Core;
 using UnityEngine;
+using UnityEngine.EventSystems;
+using UnityEngine.InputSystem;
 
 namespace Assets.MyAssets.PORTFOLIO_Assets.Scripts.UI
 {
-    /// <summary>
-    /// 진열대 버튼 5개의 입력을 GamePlayController 로 넘기고, 잠금을 일괄 제어한다.
-    /// DisplayStandList 에 붙인다.
-    ///
-    /// 판정 자체는 하지 않는다. 무엇이 정답인지 아는 것은 GamePlayController 뿐이다.
-    /// </summary>
     public class ShelfView : MonoBehaviour
     {
         [Header("데이터")]
@@ -17,6 +13,11 @@ namespace Assets.MyAssets.PORTFOLIO_Assets.Scripts.UI
         [Header("연결")]
         [Tooltip("CakeButton_1 ~ CakeButton_5")]
         [SerializeField] private ShelfButton[] shelfButtons;
+
+        [Header("키보드 단축키")]
+        [Tooltip("UI/ShelfSlot. 바인딩 <Keyboard>/1~5 의 순서가 위 shelfButtons 순서와 "
+            + "같아야 한다. 에셋에서 바인딩을 지우거나 사이에 끼워 넣으면 대응이 어긋난다")]
+        [SerializeField] private InputActionReference shelfSlotAction;
 
         private void Start()
         {
@@ -54,11 +55,30 @@ namespace Assets.MyAssets.PORTFOLIO_Assets.Scripts.UI
             gamePlay.OnJudgingChanged += HandleLockChanged;
             gamePlay.OnRunningChanged += HandleLockChanged;
 
+            // Screen_Play 가 꺼지면 이 컴포넌트도 같이 꺼진다. 덕분에 타이틀·결과 화면에서
+            // 숫자 키를 눌러도 아무 일이 없다. 구독 수명을 화면 수명에 맡기는 편이
+            // 화면마다 조건을 검사하는 것보다 어긋날 자리가 적다.
+            if (shelfSlotAction != null && shelfSlotAction.action != null)
+            {
+                shelfSlotAction.action.performed += HandleSlotShortcut;
+
+                // 직접 켜야 한다. InputSystemUIInputModule 은 자기가 쓰는 10개 액션만 켜고
+                // UI 맵 전체를 켜지 않는다(EnableAllActions). 지금은 이 에셋이 Project-wide
+                // Actions 로 등록돼 있어 자동으로 켜지지만, 그 설정이 풀리면 숫자 키만
+                // 조용히 죽는다. 이미 켜져 있으면 Enable 은 아무 일도 하지 않는다.
+                shelfSlotAction.action.Enable();
+            }
+
             ApplyLock();
         }
 
         private void OnDisable()
         {
+            if (shelfSlotAction != null && shelfSlotAction.action != null)
+            {
+                shelfSlotAction.action.performed -= HandleSlotShortcut;
+            }
+
             if (gamePlay == null)
             {
                 return;
@@ -71,6 +91,50 @@ namespace Assets.MyAssets.PORTFOLIO_Assets.Scripts.UI
         // 두 이벤트가 같은 처리로 모인다. 어느 쪽이 바뀌었는지는 중요하지 않고,
         // 결과 상태만 다시 계산하면 된다.
         private void HandleLockChanged(bool _) => ApplyLock();
+
+        /// <summary>
+        /// 숫자 키 1~5 로 진열대 버튼을 곧바로 누른다.
+        ///
+        /// gamePlay.Pick() 을 직접 부르지 않고 버튼에 Submit 이벤트를 보내는 이유가 핵심이다.
+        /// Button.OnSubmit 은 Press() 안에서 IsInteractable() 을 먼저 검사하므로,
+        /// ApplyLock 이 걸어 둔 잠금(판정 0.8초·시작 카운트다운·일시정지)이 그대로 적용된다.
+        /// Pick 을 직접 부르면 잠금을 우회하는 두 번째 입력 경로가 생겨, 연타로 주문이
+        /// 줄줄이 실패하는 버그가 되살아난다.
+        ///
+        /// 덤으로 눌림 색 전환(Pressed)도 Enter 로 눌렀을 때와 같아진다.
+        /// 단축키용 피드백을 따로 만들 필요가 없다.
+        /// </summary>
+        private void HandleSlotShortcut(InputAction.CallbackContext context)
+        {
+            if (shelfButtons == null || EventSystem.current == null)
+            {
+                return;
+            }
+
+            // 어느 키가 눌렸는지는 바인딩 순서로 안다. <Keyboard>/1~5 가 0~4 로 돌아온다.
+            // 바인딩되지 않은 컨트롤이면 -1 이다.
+            int index = context.action.GetBindingIndexForControl(context.control);
+
+            if (index < 0 || index >= shelfButtons.Length || shelfButtons[index] == null)
+            {
+                return;
+            }
+
+            // 잠금 중에는 선택도 옮기지 않는다. 눌리지 않는 버튼에 테두리만 옮겨 가면
+            // 왜 반응이 없는지 더 헷갈린다.
+            if (!shelfButtons[index].Button.IsInteractable())
+            {
+                return;
+            }
+
+            GameObject target = shelfButtons[index].gameObject;
+
+            // 마우스로 누른 뒤라면 선택이 비어 있다. 포커스를 같이 옮겨 둬야
+            // 이어서 방향키를 눌렀을 때 방금 고른 버튼에서 출발한다.
+            EventSystem.current.SetSelectedGameObject(target);
+
+            ExecuteEvents.Execute(target, new BaseEventData(EventSystem.current), ExecuteEvents.submitHandler);
+        }
 
         /// <summary>
         /// 시계가 도는 동안, 판정 연출이 아닐 때만 진열대를 누를 수 있다.
