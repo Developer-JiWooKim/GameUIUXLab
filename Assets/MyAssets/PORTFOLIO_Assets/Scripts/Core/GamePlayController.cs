@@ -74,13 +74,13 @@ namespace Assets.MyAssets.PORTFOLIO_Assets.Scripts.Core
 
         public event Action<IReadOnlyList<DessertType>> OnTrayChanged;
 
-        // true = 성공. 토스트가 구독한다.
+        /// <summary>true = 성공.</summary>
         public event Action<bool> OnJudged;
 
-        // true = 입력 잠금. ShelfView 가 버튼을 끈다.
+        /// <summary>true = 입력 잠금.</summary>
         public event Action<bool> OnJudgingChanged;
 
-        // false = 시계가 멈춤(카운트다운 중·일시정지·영업 종료). ShelfView 가 진열대를 잠근다.
+        /// <summary>false = 시계가 멈춤(카운트다운 중, 일시정지, 영업 종료).</summary>
         public event Action<bool> OnRunningChanged;
 
         public event Action OnGameOver;
