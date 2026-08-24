@@ -14,7 +14,7 @@
 - 원인: 액션 콜백은 입력 갱신 단계에서, `EventSystem` 은 `Update` 에서 돈다. 콜백이 먼저 선택을
   지워도 같은 프레임 뒤쪽에서 `Selectable.OnPointerDown` 이 자기 자신을 다시 선택한다.
   (`InputSystemUIInputModule.ProcessPointerButton` → `ExecuteEvents.ExecuteHierarchy(pointerDownHandler)`)
-- 수정 내용: `UiInputRouter` 가 콜백에서는 요청 플래그만 세우고, 실제 해제는 `LateUpdate` 에서
+- 수정 내용: `UIInputRouter` 가 콜백에서는 요청 플래그만 세우고, 실제 해제는 `LateUpdate` 에서
   수행하도록 변경. `LateUpdate` 는 `EventSystem.Update` 보다 뒤이므로 모듈이 되살린 선택을 덮는다.
 - 다시 확인한 결과:
 
@@ -24,7 +24,7 @@
 - 실제 결과: 선택이 `null` 이라 `Navigate` 가 적용될 대상이 없어 아무 일도 일어나지 않는다.
   게임패드에는 포인터가 없어 여기서 조작 수단을 완전히 잃는다.
 - 원인: 위 항목의 선택 해제와 짝이 되는 복구 경로가 없었다.
-- 수정 내용: `UiInputRouter` 가 `UI/Navigate` · `UI/Submit` 을 구독해, 선택이 비어 있으면
+- 수정 내용: `UIInputRouter` 가 `UI/Navigate` · `UI/Submit` 을 구독해, 선택이 비어 있으면
   현재 화면의 첫 버튼(`ScreenFlowController.CurrentFirstSelected`)을 다시 선택한다.
 - 다시 확인한 결과:
 

@@ -119,7 +119,7 @@ UI 스크립트가 점수 같은 게임 데이터를 직접 소유하면 안 됩
 | 오브젝트 | 붙는 것 |
 | :--- | :--- |
 | `GamePlay` | `GamePlayController`, `OrderGenerator`, `DessertTable`, `RankTable` |
-| `UIRoot` | `ScreenFlowController`, `UiInputRouter` |
+| `UIRoot` | `ScreenFlowController`, `UIInputRouter` |
 | 각 패널 | View 스크립트 (`HudController`, `OrderCardView`, `TrayView`, `ToastController`, `ShelfView`, `CountdownView`) |
 
 `GamePlay`를 `Screen_Play`의 자식으로 두지 마세요. 결과 화면에서 `Screen_Play`가 꺼진 뒤에도 `ResultView`가 최종 점수를 읽어야 합니다. 데이터 소유자의 수명이 화면 활성 상태에 묶이면 원인 찾기 어려운 버그가 생깁니다.
@@ -257,7 +257,7 @@ Pick(type):
 | 순서 | 작업 |
 | :--- | :--- |
 | ~~1~~ | ~~`ScreenFlowController` + 4개 화면 전환 골격, 화면별 첫 포커스 지정~~ 완료 |
-| ~~2~~ | ~~`UiInputRouter` — Cancel(Esc·패드B), 포인터 시 선택 해제, **선택 복구**~~ 완료 (인스펙터 배선 남음) |
+| ~~2~~ | ~~`UIInputRouter` — Cancel(Esc·패드B), 포인터 시 선택 해제, **선택 복구**~~ 완료 (인스펙터 배선 남음) |
 | ~~3~~ | ~~`GamePlayController` 시간 + `HudController` 게이지·타이머 바인딩~~ 완료 (+ 시작 카운트다운) |
 | ~~4~~ | ~~`OrderGenerator` + `OrderCardView`~~ 완료 (인스펙터 배선 남음) |
 | ~~5~~ | ~~`ShelfView` / `ShelfButton` / `TrayView` — 즉시 판정~~ 완료 (인스펙터 배선 남음) + HUD 점수·처리수 바인딩 |

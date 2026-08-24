@@ -1645,6 +1645,7 @@ MonoBehaviour:
   - {fileID: 779946526}
   - {fileID: 1661269862}
   - {fileID: 274440404}
+  shelfSlotAction: {fileID: 8368685143744003527, guid: 052faaac586de48259a63d0c4782560b, type: 3}
 --- !u!1 &457530041
 GameObject:
   m_ObjectHideFlags: 0

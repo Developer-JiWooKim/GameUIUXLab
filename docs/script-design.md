@@ -42,7 +42,7 @@
 ```
 Canvas (Scale With Screen Size / 1080x1920 / Match 0)   ← 설정 확인 완료
 ├ GamePlay                                 ← GamePlayController, OrderGenerator, DessertTable, RankTable
-└ UIRoot                                   ← ScreenFlowController, UiInputRouter
+└ UIRoot                                   ← ScreenFlowController, UIInputRouter
   ├ Screen_Title
   │ ├ TitleLabel (TitleLabelText, Logo, Image, Image (1))
   │ ├ MenuButton_Start                     ← 첫 선택 버튼
@@ -135,7 +135,7 @@ Scripts/
 │ └ RankTable.cs          성공·실패 → 등급 A~F 판정
 ├ UI/
 │ ├ ScreenFlowController.cs      화면 전환 + 첫 선택 버튼 지정
-│ ├ UiInputRouter.cs      Cancel(Esc·패드B), 포인터 시 선택 해제, 선택 복구
+│ ├ UIInputRouter.cs      Cancel(Esc·패드B), 포인터 시 선택 해제, 선택 복구
 │ ├ HudController.cs      TopNav 바인딩
 │ ├ OrderCardView.cs      주문 카드 표시
 │ ├ TrayView.cs           쟁반 표시 (표시 전용)
@@ -394,8 +394,8 @@ Pick(type):
 | `ShowPause()` / `HidePause()` | PauseButton, ResumeButton, Cancel → `Push` / `Pop` |
 | `OpenConfirm()` / `CloseConfirm()` | Pause 의 GoTitleButton, NoButton, Cancel → `Push` / `Pop` |
 | `Quit()` | MenuButton_Quit |
-| `HandleCancel()` | `UiInputRouter` → `Top.OnCancel()` |
-| `CurrentFirstSelected` | `UiInputRouter` 의 선택 복구 (5-7) |
+| `HandleCancel()` | `UIInputRouter` → `Top.OnCancel()` |
+| `CurrentFirstSelected` | `UIInputRouter` 의 선택 복구 (5-7) |
 
 **반드시 지킬 것**
 
@@ -434,7 +434,7 @@ private void ApplyFocus()
 
 ---
 
-### 4-6. `UiInputRouter.cs` — 붙일 곳: `UIRoot`
+### 4-6. `UIInputRouter.cs` — 붙일 곳: `UIRoot`
 
 Cancel(Esc / 게임패드 B), 포인터 입력 시 선택 해제, **선택 복구** 를 담당합니다.
 자세한 내용은 5장.
@@ -968,7 +968,7 @@ Input System UI 모듈에는 레거시 EventSystem 의 Tab 순회 기능이 없�
 (`ICancelHandler`). 우리가 원하는 건 "선택이 뭐든 상관없이 Esc 를 누르면 일시정지" 이므로
 액션을 **직접 구독**해야 합니다.
 
-`UiInputRouter.cs`
+`UIInputRouter.cs`
 
 ```csharp
 [SerializeField] private InputActionReference cancelAction;  // UI/Cancel
@@ -1119,7 +1119,7 @@ private void RestoreSelection(InputAction.CallbackContext ctx)
     → ResultView.OnEnable() 에서 최종 값 + RankTable 등급·등급 색 표시, 선택 = ReplayButton
 
 [Esc]
-  UiInputRouter → 현재 상태에 따라 Pause 열기/닫기, Popup 닫기
+  UIInputRouter → 현재 상태에 따라 Pause 열기/닫기, Popup 닫기
 ```
 
 ---
@@ -1133,7 +1133,7 @@ private void RestoreSelection(InputAction.CallbackContext ctx)
 | 1 | `DessertType`, `DessertTable` | 인스펙터에 스프라이트 5개가 순서대로 꽂혔는가 |
 | 2 | `ScreenFlowController` + 화면 버튼 연결 | 마우스로 Title ↔ Play ↔ Pause ↔ Result 왕복 |
 | 3 | 화면별 첫 버튼 포커스 지정 | 전환 후 방향키가 먹는가 |
-| 4 | `UiInputRouter` (Cancel + 선택 복구) | Esc·패드 B 로 Pause 열고 닫기 / 마우스 클릭 직후 스틱을 기울여 포커스가 되살아나는가 |
+| 4 | `UIInputRouter` (Cancel + 선택 복구) | Esc·패드 B 로 Pause 열고 닫기 / 마우스 클릭 직후 스틱을 기울여 포커스가 되살아나는가 |
 | 5 | `GamePlayController` (시간만) + `HudController` | 120초가 줄고, 10초부터 게이지가 깜빡이는가. **일시정지 중에는 깜빡임이 멈추는가** |
 | 6 | `OrderGenerator` + `OrderCardView` | 주문 아이콘이 그려지는가 |
 | 7 | `ShelfButton` / `ShelfView` / `TrayView` | 주문에 있는 걸 누르면 쟁반에 담기는가 |
@@ -1276,7 +1276,7 @@ public interface IState
 | GamePlay | OrderGenerator | 1 (+ 숫자 5) |
 | GamePlay | GamePlayController | 1 (+ 숫자 4) |
 | UIRoot | ScreenFlowController | 5 (상태 컴포넌트) |
-| UIRoot | UiInputRouter | 5 |
+| UIRoot | UIInputRouter | 5 |
 | TopNav | HudController | 6 (+ 색 2, 숫자 2) |
 | OrderPanel | OrderCardView | 5 |
 | ChoiceListPanel | TrayView | 4 |
