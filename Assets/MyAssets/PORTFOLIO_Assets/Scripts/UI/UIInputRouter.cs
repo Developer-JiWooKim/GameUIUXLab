@@ -39,6 +39,20 @@ namespace Assets.MyAssets.PORTFOLIO_Assets.Scripts.UI
 
         private UIStateBase topAtPointerPress;
 
+        /// <summary>
+        /// 마지막 조작이 선택 계열(Navigate·Submit)이면 true, 포인터면 false.
+        /// FocusRing 이 읽어 테두리를 켜고 끈다.
+        ///
+        /// 선택이 있느냐와는 다른 값이다. 화면이 바뀔 때 ScreenFlowController 가 첫 버튼을
+        /// 선택하므로 선택은 거의 항상 존재하지만, 마우스로 화면을 넘긴 직후에 테두리가
+        /// 떠 있으면 안 된다. "지금 키보드·패드로 조작 중인가" 를 따로 들고 있어야 한다.
+        ///
+        /// 콜백에서 바로 갱신한다. 액션 콜백은 Update 보다 앞선 입력 갱신 단계에서 오므로
+        /// 어느 LateUpdate 보다도 먼저 확정된다. 선택 해제·복구와 달리 프레임 순서 문제가
+        /// 없는 값이라 지연시킬 이유가 없다.
+        /// </summary>
+        public bool IsSelectionMode { get; private set; }
+
         private void OnEnable()
         {
             Subscribe(cancelAction, OnCancel);
@@ -94,6 +108,7 @@ namespace Assets.MyAssets.PORTFOLIO_Assets.Scripts.UI
             }
 
             clearRequested = true;
+            IsSelectionMode = false;
             topAtPointerPress = screenFlow != null ? screenFlow.Top : null;
         }
 
@@ -106,9 +121,20 @@ namespace Assets.MyAssets.PORTFOLIO_Assets.Scripts.UI
             }
 
             restoreRequested = true;
+            IsSelectionMode = true;
         }
 
-        private void OnSubmit(InputAction.CallbackContext context) => restoreRequested = true;
+        /// <summary>
+        /// Submit 도 선택 계열로 친다. 마우스로 누른 뒤 Enter 를 치면 선택이 비어 있어
+        /// RestoreSelection 이 첫 버튼을 되살리는데, 이때 테두리가 숨어 있으면 포커스가
+        /// 보이지 않는 곳으로 옮겨간 뒤 다음 Enter 에 그 버튼이 실행된다.
+        /// 무엇이 눌릴지 모르는 상태가 되므로 Navigate 와 같이 취급한다.
+        /// </summary>
+        private void OnSubmit(InputAction.CallbackContext context)
+        {
+            restoreRequested = true;
+            IsSelectionMode = true;
+        }
 
         // 지연 적용
 
