@@ -137,6 +137,8 @@ UI 스크립트가 점수 같은 게임 데이터를 직접 소유하면 안 됩
 | `ShelfView` | 진열대 버튼 입력 수신, 판정 중 버튼 잠금 |
 | `ToastController` | 판정 알림 문구 표시·소멸 (ChoiceListPanel 에 붙는다) |
 | `RankTable` | 성공·실패 건수 → 등급 A~F + 등급 색 판정 |
+| `ResultView` | 최종 성공·실패·점수·등급 표시 (켜질 때 한 번, 이벤트 구독 없음) |
+| `CountdownView` | Screen_Play 중앙 오버레이 — 시작 카운트다운, `Timeout!!` |
 
 ### 화면
 
@@ -150,7 +152,7 @@ Screen_Result  — 최종 점수, 처리/실패, 다시하기, 타이틀로
 전환 흐름:
 ```
 Title → Play ⇄ Pause
-         ↓ (시간 종료)
+         ↓ (시간 종료 → "Timeout!!" 1초 → 페이드)
        Result → Play(재시작) / Title
 Pause → ConfirmPopup → Title
 ```
@@ -259,7 +261,7 @@ Pick(type):
 | ~~4~~ | ~~`OrderGenerator` + `OrderCardView`~~ 완료 (인스펙터 배선 남음) |
 | ~~5~~ | ~~`ShelfView` / `ShelfButton` / `TrayView` — 즉시 판정~~ 완료 (인스펙터 배선 남음) + HUD 점수·처리수 바인딩 |
 | ~~6~~ | ~~판정 지연·진열대 잠금 + `ToastController`~~ 완료 (인스펙터 배선 남음. ToastMessage 는 프리팹 아님 — 텍스트 1개) |
-| 7 | `ResultView` + `RankTable`(등급 A~F·등급 색) + 다시하기 초기화 |
+| ~~7~~ | ~~`ResultView` + `RankTable`(등급 A~F·등급 색) + 다시하기 초기화~~ 완료 (인스펙터 배선 남음. 등급 경계값 튜닝 필요) |
 | 8 | Navigation 배선(진열대 `Horizontal`, CakeButton_5 Up → PauseButton), PauseButton 144px, 팝업 설명문 48px |
 | 9 | 해상도 4종 + 입력 3계열(마우스·키보드·게임패드) 테스트 |
 | 10 | 체크리스트 작성, 캡처 |

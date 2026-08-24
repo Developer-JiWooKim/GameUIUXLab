@@ -3,25 +3,24 @@ using UnityEngine;
 
 namespace Assets.MyAssets.PORTFOLIO_Assets.Scripts.Core
 {
-    /// <summary>
-    /// 무작위 주문을 만들기만 한다. 게임 상태는 건드리지 않는다. GamePlay 에 붙인다.
-    /// </summary>
     public class OrderGenerator : MonoBehaviour
     {
+        [Header("디저트 종류를 담고 있는 테이블")]
         [SerializeField] private DessertTable dessertTable;
 
-        [Tooltip("주문 1건의 총 개수. 쟁반 슬롯 수와 같아야 한다")]
+        [Header("고정 주문 개수")]
         [SerializeField] private int orderCount = 3;
 
         public int OrderCount => orderCount;
 
-        /// <summary>
-        /// 5종에서 중복을 허용해 orderCount 개를 뽑는다.
-        ///
-        /// 종류를 먼저 정하고 종류별 개수를 다시 뽑는 2단계 방식이 아니다.
-        /// 같은 종류가 두 번 나오면 그게 곧 "그 품목 2개" 인 주문이다.
-        /// 전부 같은 종류가 나올 수도 있고(확률 1/25), 그것도 정상이다.
-        /// </summary>
+        void Awake()
+        {
+            if (dessertTable == null)
+            {
+                Debug.LogWarning(this + ": 인스펙터 상에서 DessertTable이 연결되지 않음");
+            }
+        }
+
         public List<DessertType> Generate()
         {
             int typeCount = dessertTable != null ? dessertTable.Count : DessertTable.TypeCount;

@@ -292,7 +292,7 @@ event Action<IReadOnlyList<DessertType>>      OnTrayChanged;
 event Action<bool>         OnJudged;         // true=성공 → 토스트
 event Action<bool>         OnJudgingChanged; // true=입력 잠금 → ShelfView 가 버튼을 끔
 event Action<bool>         OnRunningChanged; // false=시계 정지 → ShelfView 가 버튼을 끔
-event Action               OnGameOver;       // → ScreenFlowController 가 Result 로 전환
+event Action               OnGameOver;       // → PlayState 가 Timeout 연출 뒤 Result 로 전환
 ```
 
 이벤트를 쓰는 이유는 요건이 아니라 **"Update() 에서 매 프레임 문자열을 만들지 말 것"** 을
@@ -390,7 +390,7 @@ Pick(type):
 | :--- | :--- |
 | `ShowTitle()` | Pause·Result 의 GoTitleButton, YesButton → `Set` |
 | `ShowPlay()` | MenuButton_Start, ReplayButton → `Set` |
-| `ShowResult()` | `OnGameOver` 구독 → `Set` |
+| `ShowResult()` | `PlayState` 가 Timeout 연출 뒤 호출 → `Set` |
 | `ShowPause()` / `HidePause()` | PauseButton, ResumeButton, Cancel → `Push` / `Pop` |
 | `OpenConfirm()` / `CloseConfirm()` | Pause 의 GoTitleButton, NoButton, Cancel → `Push` / `Pop` |
 | `Quit()` | MenuButton_Quit |
@@ -752,6 +752,7 @@ Splash 스프라이트를 다른 것으로 바꿨을 때 색만 다시 잡으면
 | `failText` | `TextMeshProUGUI` | FailText |
 | `scoreText` | `TextMeshProUGUI` | ScoreText |
 | `rankText` | `TextMeshProUGUI` | RankText |
+| `successPrefix` / `failPrefix` / `scorePrefix` | `string` | `"성공 : "` / `"실패 : "` / `"점수 : "` |
 
 동작
 
@@ -839,31 +840,46 @@ HUD 점수는 성공 +100 / 실패 −20 (0 하한)으로 따로 굴러갑니다
 
 ### 4-16. `CountdownView.cs` — 붙일 곳: `Screen_Play`
 
-시작 카운트다운(`3` → `2` → `1` → `Start!`)을 표시하고 패널을 끕니다.
+`Screen_Play` 중앙 오버레이 문구를 담당합니다. **시작 카운트다운과 영업 종료 알림 두 가지**입니다.
 
 | 인스펙터 | 타입 | 꽂을 것 |
 | :--- | :--- | :--- |
 | `countPanel` | `GameObject` | `CountPanel` |
 | `countText` | `TextMeshProUGUI` | `CountPanel/CountText` |
-| `steps` | `string[]` | `3`, `2`, `1`, `Start!` |
-| `stepSeconds` | `float` | 0.7 |
+| `introSteps` | `string[]` | `3`, `2`, `1`, `Start!` |
+| `introStepSeconds` | `float` | 0.7 |
+| `timeoutMessage` | `string` | `Timeout!!` |
+| `timeoutSeconds` | `float` | 1 |
 
 **`CountPanel` 이 아니라 `Screen_Play` 에 붙입니다.** 이 컴포넌트가 하는 일이 패널을 끄는
 것인데, 꺼지는 오브젝트에 붙어 있으면 다시 켜 줄 주체가 없어집니다.
 
-공개 API 는 `Awaitable Play(CancellationToken token)` 하나입니다.
-`PlayState` 가 `Prepare()` → `await Play()` → `StartGame()` 순으로 호출합니다.
+**시작과 종료가 같은 패널을 쓰는 이유**: 둘 다 "판이 아직/이미 진행 중이 아니다" 를 알리는
+같은 성격의 오버레이입니다. 패널을 따로 두면 위치·크기·폰트를 두 번 맞춰야 하고, 두 개가
+동시에 켜지는 상태도 관리해야 합니다.
+
+공개 API 두 개. 둘 다 내부의 `ShowSteps()` 로 모입니다.
+
+| 메서드 | 호출 시점 | 끝난 뒤 패널 |
+| :--- | :--- | :--- |
+| `PlayIntro(token)` | `PlayState.Enter()` — `Prepare()` → `await` → `StartGame()` | **끈다** |
+| `PlayTimeout(token)` | `PlayState.HandleGameOver()` — `await` → `ShowResult()` | **끄지 않는다** |
+
+`PlayTimeout` 이 패널을 끄지 않는 것은 의도입니다. 여기서 끄면 페이드가 시작되기 전
+**한 프레임 동안 플레이 화면이 드러납니다.** 패널은 `Screen_Play` 가 꺼질 때 함께 사라지고,
+다시 들어올 때 `OnEnable` 이 정리합니다.
 
 구현 주의 — 아래 세 가지는 실제로 겪게 됩니다.
 
 | 상황 | 없으면 | 대책 |
 | :--- | :--- | :--- |
-| 카운트다운 중 화면을 떠남 | 남은 대기가 끝난 뒤 `StartGame()` 이 불려 **타이틀 화면에서 시계가 돈다** | `PlayState.Exit()` 이 `CancellationTokenSource` 를 취소 |
-| 카운트다운 중 일시정지 | 팝업 뒤에서 숫자가 계속 흐르고, 닫으면 카운트가 이미 끝나 있다 | `PlayState.OnCancel()` 이 카운트다운 중 Esc·패드 B 를 무시 |
+| 연출 중 화면을 떠남 | 남은 대기가 끝난 뒤 `StartGame()` 또는 `ShowResult()` 가 불려 **타이틀 화면에서 시계가 돌거나 결과 화면이 뜬다** | `PlayState.Exit()` 이 `CancellationTokenSource` 를 취소 |
+| 연출 중 일시정지 | 팝업 뒤에서 숫자가 계속 흐르고, 닫으면 카운트가 이미 끝나 있다 | `PlayState.OnCancel()` 이 `isPlayingSequence` 중 Esc·패드 B 를 무시 |
 | 키보드·게임패드 Submit | `CountPanel` 은 RaycastTarget 이라 포인터만 막는다. 선택 기반 입력은 그대로 통과한다 | `PauseButton.interactable = false` 로 버튼 자체를 잠금 |
 
-`finally` 에서 패널을 반드시 끄세요. 취소로 빠져나갈 때 패널이 켜진 채 남으면
-다음 판에서 화면이 가려집니다.
+`PlayState` 는 두 연출을 `isPlayingSequence` 플래그 **하나로** 묶습니다. 둘 다 "연출이 도는
+동안 조작을 받지 않는다" 는 같은 규칙이 적용되므로, 플래그를 두 개 두면 한쪽만 검사하는
+실수가 납니다.
 
 ---
 
@@ -1095,9 +1111,12 @@ private void RestoreSelection(InputAction.CallbackContext ctx)
      OnJudgingChanged(false) → 버튼 잠금 해제
 
 [시간 0]
-  gamePlay → isRunning = false, OnGameOver
-    → PlayState.HandleGameOver() → ScreenFlowController.ShowResult()
-    → ResultView.OnEnable() 에서 최종 값 표시, 선택 = ReplayButton
+  gamePlay → SetRunning(false), OnGameOver
+    → ShelfView 가 OnRunningChanged 로 진열대 잠금
+    → PlayState.HandleGameOver() → CountdownView.PlayTimeout()
+       "Timeout!!" 1초 표시 — 마지막 판정 결과를 볼 시간이 여기서 생긴다
+    → ScreenFlowController.ShowResult() → ScreenFade 페이드 전환
+    → ResultView.OnEnable() 에서 최종 값 + RankTable 등급·등급 색 표시, 선택 = ReplayButton
 
 [Esc]
   UiInputRouter → 현재 상태에 따라 Pause 열기/닫기, Popup 닫기
