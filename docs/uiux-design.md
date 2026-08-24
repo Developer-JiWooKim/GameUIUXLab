@@ -91,7 +91,7 @@
 ### 3.3 Screen_Pause
 
 `Screen_Play` **위에 겹쳐** 띄운다. Play 를 끄면 뒤가 비어 "일시정지"로 읽히지 않는다.
-단, 겹쳐 있어도 `GameState` 의 시간은 멈춘다.
+단, 겹쳐 있어도 `GamePlayController` 의 시간은 멈춘다.
 
 | 요소 | 오브젝트 |
 | :--- | :--- |
@@ -109,9 +109,9 @@
 | 요소 | 오브젝트 | 연결 데이터 |
 | :--- | :--- | :--- |
 | 제목 | `ResultText` "결과" | — |
-| 성공 | `SuccessText` | `GameState.successCount` |
-| 실패 | `FailText` | `GameState.failCount` |
-| 점수 | `ScoreText` | `GameState.score` |
+| 성공 | `SuccessText` | `GamePlayController.successCount` |
+| 실패 | `FailText` | `GamePlayController.failCount` |
+| 점수 | `ScoreText` | `GamePlayController.score` |
 | 랭크 | `RankText` | `RankTable.Evaluate(successCount, failCount)` → A~F + 등급 색 |
 | 다시하기 | `ReplayButton` | → Screen_Play (상태 초기화) |
 | 타이틀로 | `GoTitleButton` | → Screen_Title |
@@ -214,22 +214,22 @@ HUD 와 진열대는 항상 같은 자리에 있다.
 
 ## 7. HUD와 데이터 연결 (요건 3)
 
-**UI 는 데이터를 표시할 뿐 소유하지 않는다.** 점수 변수는 `GameState` 에 있고
+**UI 는 데이터를 표시할 뿐 소유하지 않는다.** 점수 변수는 `GamePlayController` 에 있고
 `HudController` 는 그 값을 읽어 TextMeshPro 에 반영한다.
 
 | 표시 요소 | 오브젝트 | 연결 데이터 | 갱신 시점 |
 | :--- | :--- | :--- | :--- |
-| 시간 게이지 | `Progress Slider_Yellow` | `GameState.remainingTime / playTimeSeconds` | 매 프레임 |
+| 시간 게이지 | `Progress Slider_Yellow` | `GamePlayController.remainingTime / playTimeSeconds` | 매 프레임 |
 | 시간 숫자 | `TimerText` | `remainingTime` (정수 변환) | **초 단위가 바뀔 때만** |
-| 점수 | `ScoreValueText` | `GameState.score` | 판정 시 |
+| 점수 | `ScoreValueText` | `GamePlayController.score` | 판정 시 |
 | 성공 / 실패 | `CurrentSlotValueText` | `successCount`, `failCount` | 판정 시 |
-| 주문 카드 | `OrderGridLayout` | `GameState.currentOrder` | 손님 교체 시 |
-| 손님 번호 | `CustomerNameText` | `GameState.customerNumber` | 손님 교체 시 |
-| 쟁반 슬롯 | `ChoiceGridLayout` | `GameState.tray` | 담길 때 |
+| 주문 카드 | `OrderGridLayout` | `GamePlayController.currentOrder` | 손님 교체 시 |
+| 손님 번호 | `CustomerNameText` | `GamePlayController.customerNumber` | 손님 교체 시 |
+| 쟁반 슬롯 | `ChoiceGridLayout` | `GamePlayController.tray` | 담길 때 |
 
 요건은 "3개 이상"이며 위에서 **시간·점수·성공/실패·주문 안내 4종**이 실제 상태와 연결된다.
 
-매 프레임 문자열을 만들지 않기 위해 `GameState` 는 값이 바뀔 때 이벤트를 발행하고
+매 프레임 문자열을 만들지 않기 위해 `GamePlayController` 는 값이 바뀔 때 이벤트를 발행하고
 View 가 구독한다. 시간 숫자는 정수 초가 바뀌는 순간에만 `text` 를 갱신한다.
 
 ---
@@ -307,7 +307,7 @@ D-pad 컴포짓이 이미 들어 있다. 즉 **Esc 처리 코드 한 곳이 B �
 ```
 Navigate 또는 Submit 발생
   └ EventSystem.currentSelectedGameObject == null 이면
-       → ScreenManager 가 알려주는 현재 화면의 첫 버튼을 선택
+       → ScreenFlowController 가 알려주는 현재 화면의 첫 버튼을 선택
 ```
 
 첫 입력은 이동이 아니라 **포커스 복구**로 소비된다. 콘솔 UI 의 일반적인 동작이며,
@@ -470,7 +470,7 @@ Free Casual GUI 의 패널 스프라이트는 **9-Slice Border 를 설정하고 
 ### 11.1 토스트 설계
 
 - 매번 `Instantiate` 하지 않고 `Screen_Play` 아래 `ToastMessage` 오브젝트 **1개를 켜고 끈다.**
-- 표시 시간은 `GameState.judgeDelaySeconds`(0.8초) **이하**로 둔다. 토스트가 다음 손님의 주문
+- 표시 시간은 `GamePlayController.judgeDelaySeconds`(0.8초) **이하**로 둔다. 토스트가 다음 손님의 주문
   위로 넘어와 떠 있으면 어느 판정에 대한 알림인지 구분되지 않는다.
 - 연속으로 뜰 수 있으므로 이전 코루틴을 반드시 중단하고 새로 시작한다.
 - `Raycast Target` 을 꺼서 버튼 클릭을 가로채지 않게 한다.
@@ -617,7 +617,7 @@ Input Debugger 의 가상 장치나 Device Simulator 로 대체한다.
 세부 명세는 [script-design.md](script-design.md) 7장을 따른다. 요약하면,
 
 ```
-1. 화면 전환 골격 (ScreenManager) + 포커스 지정
+1. 화면 전환 골격 (ScreenFlowController) + 포커스 지정
 2. Cancel(Esc / 패드 B) 처리 + 선택 복구 (UiInputRouter)
 3. 시간 + HUD 바인딩
 4. 주문 생성 + 주문 카드 표시

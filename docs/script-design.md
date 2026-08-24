@@ -41,7 +41,8 @@
 
 ```
 Canvas (Scale With Screen Size / 1080x1920 / Match 0)   ← 설정 확인 완료
-└ UIRoot                                   ← ScreenManager, GameState, OrderGenerator, DessertTable
+├ GamePlay                                 ← GamePlayController, OrderGenerator, DessertTable, RankTable
+└ UIRoot                                   ← ScreenFlowController, UiInputRouter
   ├ Screen_Title
   │ ├ TitleLabel (TitleLabelText, Logo, Image, Image (1))
   │ ├ MenuButton_Start                     ← 첫 선택 버튼
@@ -64,14 +65,15 @@ Canvas (Scale With Screen Size / 1080x1920 / Match 0)   ← 설정 확인 완료
   │ │ │ ├ Customer (CustomerIcon, CustomerNameText "손님 9")
   │ │ │ ├ CurrentOrderText   "현재 주문"
   │ │ │ └ OrderGridLayout                  ← OrderPrefab 을 여기에 생성
-  │ │ └ ChoiceListPanel                    ← TrayView (표시 전용)
+  │ │ └ ChoiceListPanel                    ← TrayView (표시 전용), ToastController
   │ │   ├ ChoiceText         "쟁반"
-  │ │   └ ChoiceGridLayout                 ← ChoicePrefab 을 여기에 생성
+  │ │   ├ ChoiceGridLayout                 ← ChoicePrefab 을 여기에 생성
+  │ │   └ ToastMessage                     ← 판정 알림 배경 Image (평상시 비활성)
+  │ │     └ ToastText                      ← "성공!" / "실패.."
   │ ├ BotNav
+  │ │ ├ DisplayStandText     "진열대"
   │ │ └ DisplayStandList                   ← ShelfView
-  │ │   ├ DisplayStandText   "진열대"
   │ │   └ CakeButton_1 ~ CakeButton_5      ← 각각 ShelfButton
-  │ └ (ToastMessage)                       ← 0-2 에서 추가할 것 (필수)
   ├ Screen_Pause
   │ └ PausePopup
   │   ├ PauseText, ResumeButton ← 첫 선택 버튼, GoTitleButton
@@ -87,6 +89,16 @@ Canvas (Scale With Screen Size / 1080x1920 / Match 0)   ← 설정 확인 완료
 > `CurrentSlotValueText ` 는 이름 끝에 **공백**이 들어가 있습니다. `[SerializeField]` 로 꽂을 거라
 > 동작에는 문제없지만, 지금 고쳐 두는 편이 낫습니다.
 
+**게임 규칙은 `GamePlay`, 화면·입력은 `UIRoot` 로 나눕니다.** 한 오브젝트에 컴포넌트를 몰아
+붙이면 인스펙터에서 무엇이 무엇을 참조하는지 읽기 어려워집니다.
+
+`GamePlay` 를 `Screen_Play` 의 자식으로 두지 마세요. 결과 화면으로 넘어가면 `Screen_Play` 가
+꺼지는데, `ResultView` 는 그 시점에 `GamePlayController` 에서 최종 점수를 읽어야 합니다.
+데이터 소유자의 수명이 화면 활성 상태에 묶이면, 나중에 판정 지연 같은 시간 처리를 추가할 때
+"화면이 꺼져서 안 도는" 원인 찾기 어려운 버그가 생깁니다.
+화면과 함께 켜지고 꺼져야 하는 것은 **View 쪽**(`HudController`, `OrderCardView`, `TrayView`,
+`ShelfView`, `CountdownView`)이고, 이들은 이미 각자의 패널에 붙습니다.
+
 ---
 
 ## 2. 원칙 — 데이터와 표시의 분리
@@ -94,17 +106,17 @@ Canvas (Scale With Screen Size / 1080x1920 / Match 0)   ← 설정 확인 완료
 과제 요건 3번("HUD 표시 값이 실제 게임 상태와 연결")의 채점 근거가 이 구조입니다.
 
 ```
-GameState        점수·시간·주문·쟁반·성공/실패를 "소유"한다
+GamePlayController        점수·시간·주문·쟁반·성공/실패를 "소유"한다
    │  이벤트로 알림
    ▼
-Controller/View  GameState를 읽어서 TMP·Image에 "반영만" 한다
+Controller/View  GamePlayController를 읽어서 TMP·Image에 "반영만" 한다
 ```
 
 지켜야 할 선:
 
-- `HudController` 안에 `private int score;` 가 있으면 안 됩니다. 점수를 더하는 주체는 `GameState` 하나입니다.
-- View 는 `GameState` 를 **읽기만** 합니다. 버튼을 눌렀을 때는 `gameState.Pick(type)` 처럼
-  GameState 의 메서드를 호출하고, 화면 갱신은 GameState 가 던진 이벤트를 받아서 합니다.
+- `HudController` 안에 `private int score;` 가 있으면 안 됩니다. 점수를 더하는 주체는 `GamePlayController` 하나입니다.
+- View 는 `GamePlayController` 를 **읽기만** 합니다. 버튼을 눌렀을 때는 `gamePlay.Pick(type)` 처럼
+  GamePlayController 의 메서드를 호출하고, 화면 갱신은 GamePlayController 가 던진 이벤트를 받아서 합니다.
 - View 가 스스로 판단해서 화면을 바꾸면 안 됩니다. (예: TrayView 가 직접 "성공!" 을 띄우지 않음)
 
 ---
@@ -119,10 +131,10 @@ Scripts/
 │ ├ DessertType.cs        enum
 │ ├ DessertTable.cs       DessertType → 스프라이트 조회
 │ ├ OrderGenerator.cs     무작위 주문 생성
-│ ├ GameState.cs          게임 데이터 + 진행 (이 프로젝트의 심장)
+│ ├ GamePlayController.cs          게임 데이터 + 진행 (이 프로젝트의 심장)
 │ └ RankTable.cs          성공·실패 → 등급 A~F 판정
 ├ UI/
-│ ├ ScreenManager.cs      화면 전환 + 첫 선택 버튼 지정
+│ ├ ScreenFlowController.cs      화면 전환 + 첫 선택 버튼 지정
 │ ├ UiInputRouter.cs      Cancel(Esc·패드B), 포인터 시 선택 해제, 선택 복구
 │ ├ HudController.cs      TopNav 바인딩
 │ ├ OrderCardView.cs      주문 카드 표시
@@ -131,6 +143,7 @@ Scripts/
 │ ├ ShelfButton.cs        버튼 1개가 자기 DessertType 을 들고 있음
 │ ├ DessertIconView.cs    OrderPrefab / ChoicePrefab 공용 컴포넌트
 │ ├ ToastController.cs    알림 표시·소멸
+│ ├ CountdownView.cs      시작 카운트다운 (3·2·1·Start!)
 │ └ ResultView.cs         결과 화면 값 채우기
 └ States/
   ├ IState.cs             화면 상태 계약 (FirstSelected / Enter / Exit / OnCancel)
@@ -142,13 +155,13 @@ Scripts/
   └ ResultState.cs
 ```
 
-각 파일 100줄을 넘지 않아야 정상입니다. `GameState` 만 150줄 근처가 됩니다.
+각 파일 100줄을 넘지 않아야 정상입니다. `GamePlayController` 만 150줄 근처가 됩니다.
 
 기존 파일 처리:
 
 | 파일 | 처리 |
 | :--- | :--- |
-| `UIFlowController.cs` | **삭제 완료.** `Scripts/UI/ScreenManager.cs` 가 대체합니다. |
+| `UIFlowController.cs` | **삭제 완료.** `Scripts/UI/ScreenFlowController.cs` 가 대체합니다. |
 | `States/IState.cs` | **채택.** 스택 FSM 으로 확정했습니다. 부록 A 참고. |
 
 네임스페이스는 기존 파일의 `Assets.MyAssets.PORTFOLIO_Assets.Scripts...` 를 그대로 이어가든,
@@ -177,7 +190,7 @@ MonoBehaviour 아님. enum 하나만 있는 파일입니다.
 
 ---
 
-### 4-2. `DessertTable.cs` — 붙일 곳: `UIRoot`
+### 4-2. `DessertTable.cs` — 붙일 곳: `GamePlay`
 
 `DessertType` 하나로 아이콘을 얻는 조회 테이블입니다.
 이게 없으면 OrderCardView·TrayView·ShelfView 가 각자 스프라이트 배열을 들게 되고,
@@ -195,34 +208,34 @@ MonoBehaviour 아님. enum 하나만 있는 파일입니다.
 
 ---
 
-### 4-3. `OrderGenerator.cs` — 붙일 곳: `UIRoot`
+### 4-3. `OrderGenerator.cs` — 붙일 곳: `GamePlay`
 
 무작위 주문을 만들기만 합니다. 게임 상태를 건드리지 않습니다.
 
 | 인스펙터 | 타입 | 기본값 | 의미 |
 | :--- | :--- | :--- | :--- |
-| `dessertTable` | `DessertTable` | UIRoot | 품목 개수 조회 |
-| `minKinds` | `int` | 1 | 주문에 들어갈 품목 **종류** 수 최소 |
-| `maxKinds` | `int` | 3 | 최대 |
-| `minCountPerKind` | `int` | 1 | 종류별 **개수** 최소 |
-| `maxCountPerKind` | `int` | 2 | 최대 |
-| `maxTotalCount` | `int` | 6 | 총 개수 상한 (쟁반 슬롯 수와 같아야 함) |
+| `dessertTable` | `DessertTable` | GamePlay | 품목 개수 조회 |
+| `orderCount` | `int` | 3 | 주문 1건의 **총 개수**. 쟁반 슬롯 수와 같아야 함 |
 
 공개 API
 
 - `List<DessertType> Generate()` → 예: `[ChocoCake, ChocoCake, KiwiBigCake]`
 
+**5종에서 중복을 허용해 3개를 독립적으로 뽑습니다.** 종류 수를 먼저 정하고 종류별 개수를
+다시 뽑는 2단계 방식이 아닙니다. `for (i < orderCount) order.Add(랜덤 5종 중 하나)` 가 전부입니다.
+
 구현 주의
 
-- 종류를 뽑을 때 **중복되지 않게** 뽑아야 합니다. 같은 종류를 두 번 뽑으면 개수가 의도보다 늘어납니다.
-  후보 리스트를 만들어 뽑을 때마다 제거하는 방식이 가장 단순합니다.
-- 총 개수가 `maxTotalCount` 를 넘지 않는지 마지막에 확인하세요.
-  기본값은 `3종 × 2개 = 6` 이라 안전하지만, 값을 바꾸면 깨집니다.
-- 이 값과 `OrderGridLayout` / `ChoiceGridLayout` 의 칸 수가 어긋나면 UI 가 넘칩니다.
+- **중복을 허용하는 것이 규칙입니다.** 같은 종류가 두 번 나오면 그 품목이 2개인 주문입니다.
+  뽑은 종류를 후보에서 제거하지 마세요.
+- 전부 같은 종류가 나올 수 있습니다 (`[초코, 초코, 초코]`, 확률 1/25). 정상입니다.
+  주문 카드는 `초코 ×3` 한 칸, 진열대에서 초코를 세 번 누르면 성공입니다.
+- `orderCount` 를 바꾸면 쟁반 슬롯 수(`trayCapacity`)도 같이 바꿔야 합니다.
+  어긋나면 담을 수 있는 칸보다 주문이 많아져 클리어가 불가능해집니다.
 
 ---
 
-### 4-4. `GameState.cs` — 붙일 곳: `UIRoot`
+### 4-4. `GamePlayController.cs` — 붙일 곳: `GamePlay`
 
 **이 프로젝트에서 데이터를 소유하는 유일한 스크립트입니다.**
 
@@ -246,17 +259,22 @@ MonoBehaviour 아님. enum 하나만 있는 파일입니다.
 
 | 인스펙터 | 타입 | 기본값 |
 | :--- | :--- | :--- |
-| `orderGenerator` | `OrderGenerator` | UIRoot |
+| `orderGenerator` | `OrderGenerator` | GamePlay |
 | `playTimeSeconds` | `float` | 120 |
 | `scorePerSuccess` | `int` | 100 |
-| `trayCapacity` | `int` | 6 |
+| `scorePenaltyPerFail` | `int` | 20 — 실패 시 **감점** |
+| `trayCapacity` | `int` | 3 — `orderGenerator.orderCount` 와 같아야 함 |
 | `judgeDelaySeconds` | `float` | 0.8 — 판정 후 다음 손님까지의 간격 |
+
+**점수는 0 아래로 내려가지 않습니다.** 감점 후 `score = Mathf.Max(0, score - scorePenaltyPerFail)`.
+등급은 성공·실패 건수로 따로 계산하므로(4-15), 점수를 0 에서 막아도 평가에 손실이 없습니다.
 
 공개 메서드
 
 | 메서드 | 하는 일 |
 | :--- | :--- |
-| `StartGame()` | 모든 값 초기화 → 첫 손님 생성 → 관련 이벤트 **전부** 발행 |
+| `Prepare()` | 모든 값 초기화 → 첫 손님 생성 → 관련 이벤트 **전부** 발행. **시계는 멈춰 있습니다** |
+| `StartGame()` | `Prepare()` 후 시계를 돌립니다. 시작 카운트다운이 끝난 뒤에 호출됩니다 |
 | `Pick(DessertType type)` | 진열대 버튼 입력. **여기서 즉시 판정합니다.** |
 | `Tick(float deltaTime)` | 시간 감소, 0 이면 `OnGameOver` |
 | `SetRunning(bool)` | 일시정지 제어 |
@@ -273,7 +291,8 @@ event Action<IReadOnlyList<DessertType>, int> OnOrderChanged;  // (주문, 손�
 event Action<IReadOnlyList<DessertType>>      OnTrayChanged;
 event Action<bool>         OnJudged;         // true=성공 → 토스트
 event Action<bool>         OnJudgingChanged; // true=입력 잠금 → ShelfView 가 버튼을 끔
-event Action               OnGameOver;       // → ScreenManager 가 Result 로 전환
+event Action<bool>         OnRunningChanged; // false=시계 정지 → ShelfView 가 버튼을 끔
+event Action               OnGameOver;       // → ScreenFlowController 가 Result 로 전환
 ```
 
 이벤트를 쓰는 이유는 요건이 아니라 **"Update() 에서 매 프레임 문자열을 만들지 말 것"** 을
@@ -281,7 +300,7 @@ event Action               OnGameOver;       // → ScreenManager 가 Result 로
 
 시간 처리
 
-- `Tick()` 은 `GameState.Update()` 안에서 스스로 호출해도 되고 ScreenManager 가 불러 줘도 됩니다.
+- `Tick()` 은 `GamePlayController.Update()` 안에서 스스로 호출해도 되고 ScreenFlowController 가 불러 줘도 됩니다.
   **단 Play 화면일 때만** 흘러야 합니다. Pause 중에 시간이 줄면 안 됩니다.
 - `Time.timeScale = 0` 을 쓰지 말고 `isRunning` bool 로 막으세요.
   timeScale 은 나중에 토스트 코루틴까지 같이 멈춰 버립니다.
@@ -318,7 +337,8 @@ Pick(type):
 
 ```
 성공/실패 확정
-  → successCount++ (성공이면 score += scorePerSuccess) 또는 failCount++
+  → [성공] score += scorePerSuccess, successCount++
+    [실패] score = Max(0, score - scorePenaltyPerFail), failCount++
   → OnJudged(bool)          // 토스트 표시
   → OnScoreChanged / OnCountChanged
   → isJudging = true  →  OnJudgingChanged(true)     // 진열대 버튼 잠금
@@ -347,7 +367,7 @@ Pick(type):
 
 ---
 
-### 4-5. `ScreenManager.cs` — 붙일 곳: `UIRoot`
+### 4-5. `ScreenFlowController.cs` — 붙일 곳: `UIRoot`
 
 화면 전환과 **키보드 포커스 지정**을 담당합니다. 포커스 지정이 요건 5 의 핵심입니다.
 
@@ -421,7 +441,7 @@ Cancel(Esc / 게임패드 B), 포인터 입력 시 선택 해제, **선택 복�
 
 | 인스펙터 | 타입 | 꽂을 것 |
 | :--- | :--- | :--- |
-| `screenManager` | `ScreenManager` | UIRoot |
+| `screenFlow` | `ScreenFlowController` | UIRoot |
 | `cancelAction` | `InputActionReference` | `InputSystem_Actions` → `UI/Cancel` |
 | `clickAction` | `InputActionReference` | `InputSystem_Actions` → `UI/Click` |
 | `navigateAction` | `InputActionReference` | `InputSystem_Actions` → `UI/Navigate` |
@@ -443,7 +463,7 @@ ConfirmPopup 이 열려 있을 때 Pause 까지 같이 닫히면 사용자가 �
 이 분기 하나가 **Esc 와 게임패드 B 를 동시에 처리합니다.** `UI/Cancel` 의 바인딩
 `*/{Cancel}` 에 Gamepad 그룹이 포함되어 있어 장치를 구분할 필요가 없습니다.
 
-`ScreenManager` 에 현재 화면의 첫 버튼을 돌려주는 프로퍼티가 하나 필요합니다
+`ScreenFlowController` 에 현재 화면의 첫 버튼을 돌려주는 프로퍼티가 하나 필요합니다
 (선택 복구에 사용). 예: `GameObject CurrentFirstSelected { get; }`
 
 ---
@@ -476,15 +496,15 @@ ConfirmPopup 이 열려 있을 때 Pause 까지 같이 닫히면 사용자가 �
 
 | 인스펙터 | 타입 | 꽂을 것 |
 | :--- | :--- | :--- |
-| `gameState` | `GameState` | UIRoot |
-| `dessertTable` | `DessertTable` | UIRoot |
+| `gamePlay` | `GamePlayController` | GamePlay |
+| `dessertTable` | `DessertTable` | GamePlay |
 | `gridRoot` | `Transform` | OrderGridLayout |
 | `iconPrefab` | `DessertIconView` | OrderPrefab |
 | `customerNameText` | `TextMeshProUGUI` | CustomerNameText |
 
 동작
 
-- `OnEnable` 에서 `gameState.OnOrderChanged += Refresh`, `OnDisable` 에서 해제.
+- `OnEnable` 에서 `gamePlay.OnOrderChanged += Refresh`, `OnDisable` 에서 해제.
   **해제를 빼먹으면** 화면을 껐다 켤 때마다 구독이 쌓여 아이콘이 중복 생성됩니다. 가장 흔한 버그입니다.
 - `Refresh(order, customerNumber)`
   1. `gridRoot` 의 기존 자식을 전부 `Destroy`
@@ -501,17 +521,20 @@ ConfirmPopup 이 열려 있을 때 Pause 까지 같이 닫히면 사용자가 �
 
 | 인스펙터 | 타입 | 꽂을 것 |
 | :--- | :--- | :--- |
-| `gameState` | `GameState` | UIRoot |
-| `dessertTable` | `DessertTable` | UIRoot |
+| `gamePlay` | `GamePlayController` | GamePlay |
+| `dessertTable` | `DessertTable` | GamePlay |
 | `gridRoot` | `Transform` | ChoiceGridLayout |
 | `iconPrefab` | `DessertIconView` | ChoicePrefab |
 
 동작
 
-- `gameState.OnTrayChanged` 구독 → 슬롯 다시 그림. 이게 전부입니다.
+- `gamePlay.OnTrayChanged` 구독 → 슬롯 다시 그림. 이게 전부입니다.
 - **쟁반은 개별 나열**입니다 (묶지 않음). 담은 순서대로 한 칸씩 채워야 "3개 담았다" 가 즉시 읽힙니다.
-- 빈 슬롯 표현(요건 7의 "실선 슬롯 / 점선 슬롯")은, 미리 `trayCapacity` 개의 슬롯을 만들어 두고
-  빈 칸은 점선 스프라이트 + 아이콘 숨김으로 처리하는 것이 가장 단순합니다.
+- **담은 것만 그립니다.** 진열대 버튼을 누른 순간 그 품목의 `ChoicePrefab` 이 하나 붙고,
+  빈 칸은 아무것도 그리지 않습니다. 주문 카드는 묶음(`초코 ×2`), 쟁반은 개별 나열이므로
+  두 영역이 시각적으로 구분됩니다.
+- 이 방식에서는 요건 7 표의 "빈칸 점선 슬롯" 피드백이 빠집니다. 요건은 피드백 2종 이상이고
+  버튼 상태·토스트·진열대 비활성화·게이지 색·등급 색으로 이미 충족하므로 문제되지 않습니다.
 
 **슬롯 클릭으로 담기 취소는 넣지 마세요.** 즉시 판정에서는 쟁반에 담긴 것이 항상 정답이므로,
 빼는 행동은 순수한 손해일 뿐 아무 의미가 없습니다. `ChoicePrefab` 에 Button 이 붙어 있다면
@@ -542,12 +565,12 @@ ConfirmPopup 이 열려 있을 때 Pause 까지 같이 닫히면 사용자가 �
 
 | 인스펙터 | 타입 | 꽂을 것 |
 | :--- | :--- | :--- |
-| `gameState` | `GameState` | UIRoot |
+| `gamePlay` | `GamePlayController` | GamePlay |
 | `shelfButtons` | `ShelfButton[]` | CakeButton_1 ~ 5 |
 
 동작
 
-- `Start()` 에서 각 버튼의 `onClick` 에 `gameState.Pick(btn.Type)` 를 연결합니다.
+- `Start()` 에서 각 버튼의 `onClick` 에 `gamePlay.Pick(btn.Type)` 를 연결합니다.
   인스펙터에서 손으로 5개를 꽂는 것보다 코드가 낫습니다 — 하나 빠뜨리면 조용히 동작하지 않습니다.
 - 람다에서 `foreach` 변수를 캡처할 때는 지역 변수로 복사해 두는 습관이 좋습니다.
 - **`OnJudgingChanged` 구독 → 5개 버튼 `interactable` 일괄 제어** (필수)
@@ -563,8 +586,14 @@ ConfirmPopup 이 열려 있을 때 Pause 까지 같이 닫히면 사용자가 �
   이 잠금이 요건 7 의 "비활성화" 피드백 항목을 담당합니다. Button 의 **Disabled Color 가
   기본값이면 눈에 잘 안 띕니다.** 인스펙터에서 명확한 색으로 바꾸고, 잠긴 순간을 캡처해 두세요.
   채점 증거가 됩니다.
-- 일시정지에 들어갈 때도 같은 방식으로 잠글지 결정하세요. `Screen_Pause` 가 위를 덮으므로
-  클릭은 어차피 막히지만, 키보드 Navigate 가 뒤쪽 진열대 버튼으로 새어 나갈 수 있습니다.
+- **`OnRunningChanged` 구독 → 같은 처리로 합류** (구현 시 추가)
+
+  잠금 조건을 `IsRunning && !IsJudging` 으로 정했습니다. 판정 중(0.8초)뿐 아니라
+  **시작 카운트다운과 일시정지 구간도 잠깁니다.** `CountPanel` 과 `PausePopup` 이 위를 덮어
+  클릭은 막히지만, 키보드·게임패드 Submit 은 패널을 통과해 뒤쪽 진열대 버튼에 닿습니다.
+  `Pick()` 이 `!isRunning` 을 거부하므로 데이터는 안전했지만, 눌리는데 아무 일도
+  일어나지 않는 상태가 남습니다. 그래서 `GamePlayController` 에 `OnRunningChanged` 를 추가하고
+  두 이벤트를 한 처리(`ApplyLock`)로 모았습니다.
 
 **Navigation 설정** (요건 5. 스크립트가 아니라 인스펙터 작업)
 
@@ -587,15 +616,19 @@ ConfirmPopup 이 열려 있을 때 Pause 까지 같이 닫히면 사용자가 �
 
 | 인스펙터 | 타입 | 꽂을 것 |
 | :--- | :--- | :--- |
-| `gameState` | `GameState` | UIRoot |
+| `gamePlay` | `GamePlayController` | GamePlay |
 | `scoreValueText` | `TextMeshProUGUI` | ScoreValueText |
 | `timerText` | `TextMeshProUGUI` | TimerText |
 | `timerGauge` | `Slider` | Progress Slider_Yellow |
 | `gaugeFillImage` | `Image` | Progress Slider_Yellow / Fill Area / Fill |
 | `countValueText` | `TextMeshProUGUI` | CurrentSlotValueText |
 | `dangerTimeThreshold` | `float` | 10 |
-| `normalColor` / `dangerColor` | `Color` | 게이지 평상시 / 위험 색 |
+| `dangerColor` | `Color` | 위험 색 |
 | `pulseSpeed` | `float` | 2 — 점멸 속도 (초당 깜빡임 = `pulseSpeed / 2`) |
+
+**평상시 색은 인스펙터 필드로 두지 않습니다.** 게이지의 노란색과 TimerText 색은 이미 씬에
+있으므로, `Awake()` 에서 각각의 현재 색을 읽어 두고 경고가 풀릴 때 그 값으로 되돌립니다.
+같은 색을 두 군데 적어 두면 프리팹 색을 바꿨을 때 코드가 옛 색으로 되돌려 놓습니다.
 
 동작
 
@@ -610,16 +643,17 @@ ConfirmPopup 이 열려 있을 때 Pause 까지 같이 닫히면 사용자가 �
 
   if (remain > dangerTimeThreshold)
   {
-      gaugeFillImage.color = normalColor;                  // 다시하기 시 색 복구가 여기서 일어난다
-      timerText.color = normalColor;
+      gaugeFillImage.color = gaugeNormalColor;             // 다시하기 시 색 복구가 여기서 일어난다
   }
   else
   {
       // 남은 시간 자체를 위상으로 쓴다. Time.time 을 쓰면 안 되는 이유는 아래 참고.
       float t = Mathf.PingPong(remain * pulseSpeed, 1f);
-      gaugeFillImage.color = Color.Lerp(normalColor, dangerColor, t);
-      timerText.color = dangerColor;                       // 숫자는 고정. 점멸시키지 않는다
+      gaugeFillImage.color = Color.Lerp(gaugeNormalColor, dangerColor, t);
   }
+
+  // 글자 색은 경고 상태가 바뀐 순간에만 만진다. 숫자는 고정, 점멸시키지 않는다
+  if (isDanger != wasDanger) timerText.color = isDanger ? dangerColor : timerNormalColor;
   ```
 
 - `CeilToInt` 를 쓰는 이유: `FloorToInt` 면 시작하자마자 "119" 가 뜹니다.
@@ -647,36 +681,64 @@ ConfirmPopup 이 열려 있을 때 Pause 까지 같이 닫히면 사용자가 �
 
 ---
 
-### 4-13. `ToastController.cs` — 붙일 곳: `ToastMessage` (0-2 에서 추가)
+### 4-13. `ToastController.cs` — 붙일 곳: `ChoiceListPanel`
 
-| 인스펙터 | 타입 |
-| :--- | :--- |
-| `gameState` | `GameState` |
-| `root` | `GameObject` |
-| `messageText` | `TextMeshProUGUI` |
-| `backgroundImage` | `Image` |
-| `successColor` / `dangerColor` | `Color` |
-| `successMessage` / `failMessage` | `string` ("주문 성공!" / "주문에 없는 품목이에요") |
-| `showSeconds` | `float` (기본 1.2) |
+| 인스펙터 | 타입 | 꽂을 것 |
+| :--- | :--- | :--- |
+| `gamePlay` | `GamePlayController` | GamePlay |
+| `root` | `GameObject` | ChoiceListPanel / ToastMessage (평상시 비활성) |
+| `backgroundImage` | `Image` | ToastMessage 의 Image |
+| `messageText` | `TextMeshProUGUI` | ToastMessage / ToastText |
+| `successMessage` / `failMessage` | `string` | `"성공!"` / `"실패.."` |
+| `successColor` / `failColor` | `Color` | Splash 배경에 곱해지는 **연한** 색 |
+| `successTextColor` / `failTextColor` | `Color` | 같은 계열의 **진한** 색 (글자) |
+| `showSeconds` | `float` | 0.5 |
 
-`showSeconds` 는 `GameState.judgeDelaySeconds` **보다 짧거나 같게** 두세요.
-토스트가 다음 손님 주문 위로 넘어와 떠 있으면, 방금 판정에 대한 알림인지 새 주문에 대한
-알림인지 구분이 안 됩니다.
+**배경 Image + 문구 Text 두 개입니다.** 프리팹으로는 만들지 않습니다.
+
+처음에는 글자만 두었는데 쟁반 아이콘 위에서 읽히지 않았습니다. 배경을 깔고 **배경과 글자를
+같은 색 계열로 함께** 바꿉니다.
+
+**두 색을 완전히 같게 두면 글자가 배경에 묻혀 사라집니다.** 그래서 배경(연한 쪽)과
+글자(진한 쪽)를 각각 인스펙터 필드로 노출했습니다. 밝기 차를 코드가 계산하지 않는 이유는,
+Splash 스프라이트를 다른 것으로 바꿨을 때 색만 다시 잡으면 되게 하려는 것입니다.
+
+배경 스프라이트는 `Splash4` 입니다(가운데가 채워진 얼룩 모양). `Image.color` 는 스프라이트에
+**곱해지므로** Splash4 의 밝은 크림색 부분이 지정한 색을 받습니다. 어두운 색을 넣으면
+테두리까지 뭉개지므로 배경 색은 연하게 둡니다. 모양이 정사각형에 가까우니 **Preserve Aspect
+를 켜서** 얼룩이 찌그러지지 않게 하세요.
+
+판정 잠금(`judgeDelaySeconds` 0.8초)이 표시 시간(0.5초)보다 길어 **토스트가 동시에 둘
+존재할 수 없습니다.** 인스턴스 하나를 켜고 끄면 충분하고, 생성·파괴가 없으니 오브젝트 풀
+이야기도 나오지 않습니다. 재사용 프리팹 요건(2개 이상)은 `OrderPrefab`·`ChoicePrefab` 으로
+이미 충족되어 있으므로 프리팹으로 만들 이유가 없습니다.
+
+`showSeconds` 는 `judgeDelaySeconds` **보다 짧거나 같게** 두세요. 토스트가 다음 손님 주문
+위로 넘어와 떠 있으면, 방금 판정에 대한 알림인지 새 주문에 대한 알림인지 구분이 안 됩니다.
+
+**붙일 곳이 `ToastMessage` 자신이 아닌 이유** (중요)
+
+평상시 꺼져 있는 오브젝트는 `OnEnable` 이 불리지 않아 `OnJudged` 를 구독할 기회가 없습니다.
+켜 줄 주체가 꺼진 채로 기다리는 셈이 되어, 토스트가 영원히 뜨지 않습니다.
+`CountdownView` 를 `CountPanel` 이 아니라 `Screen_Play` 에 붙이는 것과 같은 이유입니다.
+
+`ChoiceListPanel` 에는 이미 `TrayView` 가 붙어 있지만, 둘 다 이 패널의 표시를 담당하므로
+책임이 섞이지 않습니다.
 
 동작
 
-- `gameState.OnJudged(bool success)` 구독 → 색·문구 설정 → `root.SetActive(true)` →
-  `showSeconds` 후 `SetActive(false)`
-- 소멸은 코루틴으로. 연달아 뜰 수 있으므로 **이전 코루틴을 반드시 중단**하고 새로 시작하세요.
-  안 하면 두 번째 토스트가 첫 번째의 타이머 때문에 일찍 사라집니다.
+- `gamePlay.OnJudged(bool success)` 구독 → 문구·배경색 설정 → `root` 활성 → `showSeconds` 후 비활성
+- 소멸 대기는 `Awaitable` + `CancellationTokenSource`. 프로젝트의 다른 시간 처리
+  (`CountdownView`, `GamePlayController.BeginJudgeDelay`)와 같은 방식으로 맞췄습니다.
+- **이전 대기를 반드시 끊습니다.** 안 끊으면 두 번째 토스트가 첫 번째의 타이머에 걸려
+  일찍 사라집니다. `CancelHide()` → 새 `CTS` 순서로 처리합니다.
+- `OnEnable` / `OnDisable` 에서 `root` 를 끕니다. 영업 종료 직후에 판정이 있었다면 토스트가
+  뜬 채로 화면이 꺼지므로, 다시 들어올 때 지난 판의 문구가 남습니다.
+- `Invoke` / `InvokeRepeating` 은 쓰지 마세요. 중단 관리가 불편합니다.
+- 토스트가 클릭을 먹지 않도록 **Raycast Target 을 꺼 두세요.**
 
-  ```csharp
-  if (routine != null) StopCoroutine(routine);
-  routine = StartCoroutine(ShowRoutine());
-  ```
-
-- `Invoke` / `InvokeRepeating` 은 쓰지 마세요. 중단 관리가 코루틴보다 불편합니다.
-- 토스트가 버튼 클릭을 먹지 않도록 Raycast Target 을 꺼 두세요.
+**색만으로 정보를 전달하지 않습니다.** 문구(`성공!` / `실패..`)가 색과 함께 바뀌므로
+색각 이상이 있어도 판정 결과를 읽을 수 있습니다.
 
 ---
 
@@ -684,8 +746,8 @@ ConfirmPopup 이 열려 있을 때 Pause 까지 같이 닫히면 사용자가 �
 
 | 인스펙터 | 타입 | 꽂을 것 |
 | :--- | :--- | :--- |
-| `gameState` | `GameState` | UIRoot |
-| `rankTable` | `RankTable` | UIRoot |
+| `gamePlay` | `GamePlayController` | GamePlay |
+| `rankTable` | `RankTable` | GamePlay |
 | `successText` | `TextMeshProUGUI` | SuccessText |
 | `failText` | `TextMeshProUGUI` | FailText |
 | `scoreText` | `TextMeshProUGUI` | ScoreText |
@@ -693,12 +755,12 @@ ConfirmPopup 이 열려 있을 때 Pause 까지 같이 닫히면 사용자가 �
 
 동작
 
-- `OnEnable()` 에서 `gameState` 값을 읽어 채웁니다. 이벤트 구독이 필요 없습니다 —
+- `OnEnable()` 에서 `gamePlay` 값을 읽어 채웁니다. 이벤트 구독이 필요 없습니다 —
   결과 화면은 켜지는 순간 한 번만 그리면 되기 때문입니다.
 - 랭크:
 
   ```
-  var rule = rankTable.Evaluate(gameState.SuccessCount, gameState.FailCount);
+  var rule = rankTable.Evaluate(gamePlay.SuccessCount, gamePlay.FailCount);
   rankText.text  = rule.label;
   rankText.color = rule.color;      // 요건 7 색 변화 피드백
   ```
@@ -708,7 +770,7 @@ ConfirmPopup 이 열려 있을 때 Pause 까지 같이 닫히면 사용자가 �
 
 ---
 
-### 4-15. `RankTable.cs` — 붙일 곳: `UIRoot`
+### 4-15. `RankTable.cs` — 붙일 곳: `GamePlay`
 
 성공·실패 건수로 최종 등급(A~F)을 판정합니다. `DessertTable` 과 같은 성격의 조회 컴포넌트입니다.
 
@@ -765,9 +827,43 @@ A = `S×1.15`, B = `S×0.95`, C = `S×0.75`, D = `S×0.5`, E = `S×0.25` (각각
   원인을 찾기 어려운 조용한 버그가 되는 자리입니다.
 - `rankScore` 는 음수가 될 수 있습니다(0성공 20실패 = −1000). 정상이며 F 입니다.
 
-**게임 중 `score` 에는 실패 감점을 넣지 마세요.** 이 산식은 결과 화면 계산 전용입니다.
-HUD 점수가 실패마다 줄어들면 그 감소를 알리는 피드백을 새로 설계해야 하고,
-CLAUDE.md 가 금지한 "보너스·배수 시스템" 쪽으로 넘어갑니다.
+**등급 산식과 HUD 점수는 별개입니다.** 등급은 성공·실패 **건수**로 계산하고,
+HUD 점수는 성공 +100 / 실패 −20 (0 하한)으로 따로 굴러갑니다. 두 값을 하나로 합치지 마세요.
+
+> 이전 설계에서는 "게임 중 감점 금지" 였습니다. 실패 −20 은 그 결정을 뒤집은 것이므로
+> CLAUDE.md 의 금지 목록도 같이 고쳐야 합니다. 감점이 들어온 이상, 점수가 줄어드는 순간을
+> 사용자가 알 수 있어야 합니다 — 실패 토스트(Danger 색)가 그 역할을 겸합니다.
+> 점수 텍스트를 따로 깜빡이게 만들지는 마세요. 피드백이 두 겹이 되어 시끄러워집니다.
+
+---
+
+### 4-16. `CountdownView.cs` — 붙일 곳: `Screen_Play`
+
+시작 카운트다운(`3` → `2` → `1` → `Start!`)을 표시하고 패널을 끕니다.
+
+| 인스펙터 | 타입 | 꽂을 것 |
+| :--- | :--- | :--- |
+| `countPanel` | `GameObject` | `CountPanel` |
+| `countText` | `TextMeshProUGUI` | `CountPanel/CountText` |
+| `steps` | `string[]` | `3`, `2`, `1`, `Start!` |
+| `stepSeconds` | `float` | 0.7 |
+
+**`CountPanel` 이 아니라 `Screen_Play` 에 붙입니다.** 이 컴포넌트가 하는 일이 패널을 끄는
+것인데, 꺼지는 오브젝트에 붙어 있으면 다시 켜 줄 주체가 없어집니다.
+
+공개 API 는 `Awaitable Play(CancellationToken token)` 하나입니다.
+`PlayState` 가 `Prepare()` → `await Play()` → `StartGame()` 순으로 호출합니다.
+
+구현 주의 — 아래 세 가지는 실제로 겪게 됩니다.
+
+| 상황 | 없으면 | 대책 |
+| :--- | :--- | :--- |
+| 카운트다운 중 화면을 떠남 | 남은 대기가 끝난 뒤 `StartGame()` 이 불려 **타이틀 화면에서 시계가 돈다** | `PlayState.Exit()` 이 `CancellationTokenSource` 를 취소 |
+| 카운트다운 중 일시정지 | 팝업 뒤에서 숫자가 계속 흐르고, 닫으면 카운트가 이미 끝나 있다 | `PlayState.OnCancel()` 이 카운트다운 중 Esc·패드 B 를 무시 |
+| 키보드·게임패드 Submit | `CountPanel` 은 RaycastTarget 이라 포인터만 막는다. 선택 기반 입력은 그대로 통과한다 | `PauseButton.interactable = false` 로 버튼 자체를 잠금 |
+
+`finally` 에서 패널을 반드시 끄세요. 취소로 빠져나갈 때 패널이 켜진 채 남으면
+다음 판에서 화면이 가려집니다.
 
 ---
 
@@ -896,7 +992,7 @@ private void HandleClick(InputAction.CallbackContext ctx)
 - `Click` 은 PassThrough 라 누를 때와 뗄 때 모두 콜백이 옵니다. `performed` 만 구독하면 됩니다.
 - 눌린 순간 선택을 해제해도 버튼 클릭은 정상 동작합니다.
   포인터 클릭은 선택 상태와 무관한 별도 경로(`IPointerClickHandler`)로 전달되기 때문입니다.
-- **주의**: 화면 전환 버튼을 마우스로 누르면 → 여기서 `null` 로 해제 → 곧바로 `ScreenManager` 가
+- **주의**: 화면 전환 버튼을 마우스로 누르면 → 여기서 `null` 로 해제 → 곧바로 `ScreenFlowController` 가
   새 화면의 첫 버튼을 선택합니다. 순서가 반대가 되면 새 화면의 포커스가 지워집니다.
   전환 후에도 포커스가 잡히는지 반드시 눈으로 확인하세요.
 
@@ -923,7 +1019,7 @@ private void RestoreSelection(InputAction.CallbackContext ctx)
 {
     // 포인터로 조작한 뒤 선택이 비어 있으면, 방향 입력을 이동이 아니라 포커스 복구에 쓴다
     if (EventSystem.current.currentSelectedGameObject != null) return;
-    EventSystem.current.SetSelectedGameObject(screenManager.CurrentFirstSelected);
+    EventSystem.current.SetSelectedGameObject(screenFlow.CurrentFirstSelected);
 }
 ```
 
@@ -933,8 +1029,8 @@ private void RestoreSelection(InputAction.CallbackContext ctx)
 - 키보드에도 그대로 적용되므로 키보드 조작의 안정성도 같이 올라갑니다.
 - `Navigate` 는 PassThrough Vector2 라 스틱을 놓을 때도 콜백이 옵니다. `performed` 만
   구독하고, 필요하면 `ctx.ReadValue<Vector2>()` 가 0 에 가까울 때 무시하세요.
-- `screenManager.CurrentFirstSelected` 가 파괴되었거나 비활성이면 선택이 먹지 않습니다.
-  화면 전환 직후에는 `ScreenManager` 가 이미 선택을 지정하므로 실제로 겹칠 일은 드뭅니다.
+- `screenFlow.CurrentFirstSelected` 가 파괴되었거나 비활성이면 선택이 먹지 않습니다.
+  화면 전환 직후에는 `ScreenFlowController` 가 이미 선택을 지정하므로 실제로 겹칠 일은 드뭅니다.
 
 ### 5-8. 게임패드 테스트 방법
 
@@ -955,24 +1051,32 @@ private void RestoreSelection(InputAction.CallbackContext ctx)
 
 ```
 [Start]
-  ScreenManager.ShowTitle()
+  ScreenFlowController.ShowTitle()
     → Screen_Title 만 활성, EventSystem 선택 = MenuButton_Start
 
 [시작 버튼]
-  ScreenManager.ShowPlay()
-    → gameState.StartGame()
-        score=0, time=60, success=0, fail=0, tray 비움
+  ScreenFlowController.ShowPlay()
+    → PlayState.Enter()
+    → gamePlay.Prepare()          ── 시계는 아직 멈춰 있다
+        score=0, time=120, success=0, fail=0, tray 비움
         customerNumber=1, currentOrder = orderGenerator.Generate()
         OnScoreChanged / OnCountChanged / OnTimeChanged / OnOrderChanged / OnTrayChanged 발행
-    → 각 View 가 초기 상태를 그림
+    → 각 View 가 초기 상태를 그림 (타이머는 120초에 멈춰 있다)
     → 선택 = CakeButton_1
 
+[시작 카운트다운]
+  CountdownView.Play()
+    → CountPanel 활성 → CountText "3" → "2" → "1" → "Start!" (각 stepSeconds)
+    → CountPanel 비활성
+  이 동안 PlayState 가 PauseButton 을 잠근다 (Esc·패드 B 도 무시)
+    → gamePlay.StartGame()        ── 여기서부터 시계가 흐른다
+
 [매 프레임, isRunning 일 때만]
-  gameState.Tick(Time.deltaTime) → OnTimeChanged
+  gamePlay.Tick(Time.deltaTime) → OnTimeChanged
     → HudController: 게이지 갱신, 초가 바뀌면 텍스트 갱신, 10초 이하면 Danger 색
 
 [진열대 버튼 클릭]  ── 여기서 즉시 판정
-  ShelfView → gameState.Pick(type)
+  ShelfView → gamePlay.Pick(type)
 
   ├ isJudging 또는 !isRunning        → 무시
   │
@@ -981,7 +1085,7 @@ private void RestoreSelection(InputAction.CallbackContext ctx)
   │                                    → remaining 이 전부 0 이면 ↓ 성공
   │
   ├ [성공] score += 100, successCount++
-  └ [실패] failCount++
+  └ [실패] score = Max(0, score − 20), failCount++
        ↓ 공통
      OnJudged(bool)         → ToastController 표시
      OnScoreChanged / OnCountChanged → HudController
@@ -991,8 +1095,8 @@ private void RestoreSelection(InputAction.CallbackContext ctx)
      OnJudgingChanged(false) → 버튼 잠금 해제
 
 [시간 0]
-  gameState → isRunning = false, OnGameOver
-    → ScreenManager.ShowResult()
+  gamePlay → isRunning = false, OnGameOver
+    → PlayState.HandleGameOver() → ScreenFlowController.ShowResult()
     → ResultView.OnEnable() 에서 최종 값 표시, 선택 = ReplayButton
 
 [Esc]
@@ -1008,10 +1112,10 @@ private void RestoreSelection(InputAction.CallbackContext ctx)
 | 단계 | 작업 | 확인 방법 |
 | :--- | :--- | :--- |
 | 1 | `DessertType`, `DessertTable` | 인스펙터에 스프라이트 5개가 순서대로 꽂혔는가 |
-| 2 | `ScreenManager` + 화면 버튼 연결 | 마우스로 Title ↔ Play ↔ Pause ↔ Result 왕복 |
+| 2 | `ScreenFlowController` + 화면 버튼 연결 | 마우스로 Title ↔ Play ↔ Pause ↔ Result 왕복 |
 | 3 | 화면별 첫 버튼 포커스 지정 | 전환 후 방향키가 먹는가 |
 | 4 | `UiInputRouter` (Cancel + 선택 복구) | Esc·패드 B 로 Pause 열고 닫기 / 마우스 클릭 직후 스틱을 기울여 포커스가 되살아나는가 |
-| 5 | `GameState` (시간만) + `HudController` | 120초가 줄고, 10초부터 게이지가 깜빡이는가. **일시정지 중에는 깜빡임이 멈추는가** |
+| 5 | `GamePlayController` (시간만) + `HudController` | 120초가 줄고, 10초부터 게이지가 깜빡이는가. **일시정지 중에는 깜빡임이 멈추는가** |
 | 6 | `OrderGenerator` + `OrderCardView` | 주문 아이콘이 그려지는가 |
 | 7 | `ShelfButton` / `ShelfView` / `TrayView` | 주문에 있는 걸 누르면 쟁반에 담기는가 |
 | 8 | `Pick()` 즉시 판정 + 점수/카운트 | 아래 4가지 경우를 전부 손으로 확인 |
@@ -1118,9 +1222,9 @@ public interface IState
 }
 ```
 
-- `Tick()` 은 넣지 마세요. 시간 갱신은 `GameState` 의 책임입니다. 넣는 순간 데이터가
+- `Tick()` 은 넣지 마세요. 시간 갱신은 `GamePlayController` 의 책임입니다. 넣는 순간 데이터가
   상태 클래스로 새어 나가고, 이 프로젝트가 지키기로 한 분리 원칙이 무너집니다.
-- 패널 활성화와 포커스 지정은 **`ScreenManager` 가 전담**합니다. 상태가 자기 패널을 직접
+- 패널 활성화와 포커스 지정은 **`ScreenFlowController` 가 전담**합니다. 상태가 자기 패널을 직접
   켜고 끄면 Push 로 겹칠 때 아래층이 사라집니다.
 
 ### A-4. 상태는 MonoBehaviour 로, 각 패널에 붙인다
@@ -1136,7 +1240,7 @@ public interface IState
 패널에 붙여 두면 첫 버튼 참조가 인스펙터로 해결되어 배선 코드가 사라집니다.
 
 > **`[SerializeField]` 에 인터페이스 타입을 쓰지 마세요.** Unity 직렬화기는 인터페이스를
-> 직렬화하지 못해 인스펙터에 칸 자체가 나오지 않습니다. `ScreenManager` 의 참조 필드는
+> 직렬화하지 못해 인스펙터에 칸 자체가 나오지 않습니다. `ScreenFlowController` 의 참조 필드는
 > `TitleState`, `PlayState` … 같은 **구체 타입**으로 선언하고, 공통 동작은
 > `UiStateBase` 추상 클래스로 묶습니다.
 
@@ -1148,11 +1252,11 @@ public interface IState
 
 | 오브젝트 | 붙는 스크립트 | 꽂아야 할 참조 |
 | :--- | :--- | :--- |
-| UIRoot | DessertTable | 스프라이트 5 |
-| UIRoot | RankTable | 등급 규칙 6줄 (+ 숫자 2) |
-| UIRoot | OrderGenerator | 1 (+ 숫자 5) |
-| UIRoot | GameState | 1 (+ 숫자 4) |
-| UIRoot | ScreenManager | 5 (상태 컴포넌트) |
+| GamePlay | DessertTable | 스프라이트 5 |
+| GamePlay | RankTable | 등급 규칙 6줄 (+ 숫자 2) |
+| GamePlay | OrderGenerator | 1 (+ 숫자 5) |
+| GamePlay | GamePlayController | 1 (+ 숫자 4) |
+| UIRoot | ScreenFlowController | 5 (상태 컴포넌트) |
 | UIRoot | UiInputRouter | 5 |
 | TopNav | HudController | 6 (+ 색 2, 숫자 2) |
 | OrderPanel | OrderCardView | 5 |
@@ -1161,7 +1265,10 @@ public interface IState
 | CakeButton_1~5 | ShelfButton | 각 1 (enum) |
 | ToastMessage | ToastController | 4 (+ 색 2, 문구 2) |
 | Screen_Result | ResultView | 6 |
+| Screen_Play | CountdownView | 2 (+ 문구 4, 숫자 1) |
 | Screen_Title / Play / Pause / Result, ConfirmPopup | 각 State | 각 1 (firstSelected) |
+| Screen_Play | PlayState | + GamePlayController, CountdownView, PauseButton |
+| Screen_Pause | PauseState | + GamePlayController |
 | OrderPrefab / ChoicePrefab | DessertIconView | 각 2~3 |
 
 인스펙터 연결 대신 `GameObject.Find` 를 쓰고 싶어지는 순간이 옵니다. 쓰지 마세요.

@@ -7,8 +7,8 @@ namespace Assets.MyAssets.PORTFOLIO_Assets.Scripts.States
     /// 결과 화면은 켜지는 순간 한 번만 그리면 되므로 이벤트 구독이 필요 없다.
     ///
     /// 버튼 onClick 배선:
-    ///   ReplayButton  → ScreenManager.ShowPlay()   ← Set 이므로 PlayState.Enter() 가 다시 불린다
-    ///   GoTitleButton → ScreenManager.ShowTitle()
+    ///   ReplayButton  → ScreenFlowController.ShowPlay()   ← Set 이므로 PlayState.Enter() 가 다시 불린다
+    ///   GoTitleButton → ScreenFlowController.ShowTitle()
     /// </summary>
     public class ResultState : UIStateBase
     {

@@ -4,8 +4,8 @@ namespace Assets.MyAssets.PORTFOLIO_Assets.Scripts.States
     /// Screen_Title 에 붙인다. FirstSelected = MenuButton_Start
     ///
     /// 버튼 onClick 배선:
-    ///   MenuButton_Start → ScreenManager.ShowPlay()
-    ///   MenuButton_Quit  → ScreenManager.Quit()
+    ///   MenuButton_Start → ScreenFlowController.ShowPlay()
+    ///   MenuButton_Quit  → ScreenFlowController.Quit()
     /// </summary>
     public class TitleState : UIStateBase
     {
