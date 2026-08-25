@@ -487,6 +487,7 @@ MonoBehaviour:
   iconPrefab: {fileID: 5028027183013207175, guid: 8b6ca9d72be51964181f32fa45b80501, type: 3}
   customerNameText: {fileID: 1440799894}
   customerNamePrefix: "\uC190\uB2D8 "
+  iconPoolCapacity: 3
 --- !u!1 &86332935
 GameObject:
   m_ObjectHideFlags: 0
@@ -865,11 +866,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5881114420730841804, guid: 700434f6f994d9140a5886fe6d9739cd, type: 3}
       propertyPath: m_AnchorMax.x
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 5881114420730841804, guid: 700434f6f994d9140a5886fe6d9739cd, type: 3}
       propertyPath: m_AnchorMax.y
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8394187614605513352, guid: 700434f6f994d9140a5886fe6d9739cd, type: 3}
       propertyPath: m_Value
@@ -2697,7 +2698,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &624901258
 RectTransform:
   m_ObjectHideFlags: 0
@@ -6908,7 +6909,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &1695488691
 RectTransform:
   m_ObjectHideFlags: 0
@@ -8210,6 +8211,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2b63913665ae4148907e84d0a1eb87b3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  inputRouter: {fileID: 0}
   ringColor: {r: 0.41037738, g: 0.77989775, b: 1, a: 1}
   thickness: 6
   padding: 6
@@ -8309,6 +8311,7 @@ MonoBehaviour:
   dessertTable: {fileID: 1899796337}
   gridRoot: {fileID: 1094658680}
   iconPrefab: {fileID: 420521249822356042, guid: c9d95b5ac687d4d41a6eab505e5338e1, type: 3}
+  iconPoolCapacity: 3
 --- !u!114 &1907012082
 MonoBehaviour:
   m_ObjectHideFlags: 0

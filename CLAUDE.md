@@ -35,7 +35,8 @@
 - 튜토리얼 화면, 도움말
 - 동시 손님(대기줄), 손님 선택 상태 관리
 - 드래그 앤 드롭
-- 오브젝트 풀링, `DOTween` 등 외부 라이브러리
+- `DOTween` 등 외부 라이브러리
+  (아이콘 풀링은 예외. `UnityEngine.Pool.ObjectPool` 로 이미 구현했다 — `DessertIconPool`)
 - 씬 분리 (`SceneManager.LoadScene`)
 - Safe Area(노치) 대응
 
@@ -67,6 +68,9 @@ Assets/
 │   └── PORTFOLIO_Assets/
 │       ├── Scene/
 │       ├── Scripts/          ← 여기에 코드 작성
+│       │   ├── Core/         데이터·규칙 (Core/Rules 는 UnityEngine 도 안 씀)
+│       │   ├── Views/        패널 바인딩
+│       │   └── Screens/      화면 흐름·상태·입력 라우팅
 │       ├── Sprites/CakeIcon/  ← 디저트 아이콘 5종
 │       ├── Font/             ← KERISKEDU_R SDF (한글)
 │       └── Prefabs/          ← UI 프리팹
@@ -76,6 +80,11 @@ Assets/
 ```
 
 `Skyden_Games`와 에셋 스토어 폴더는 **수정하지 마세요.** 읽기만 합니다.
+
+참조는 `Screens → Views → Core` 한 방향입니다. 역방향을 만들지 마세요. 특히
+`Views` 안에서 `ScreenFlowController`·`UIInputRouter` 같은 `Screens` 타입을 참조하면
+순환이 됩니다. 선택 테두리를 그리는 `FocusRing` 이 `Views` 가 아니라 `Screens` 에 있는
+이유가 이것입니다 — 게임 데이터는 안 읽고 `UIInputRouter` 를 읽습니다.
 
 ---
 

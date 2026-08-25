@@ -1,10 +1,11 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using Assets.MyAssets.PORTFOLIO_Assets.Scripts.Core.Rules;
 
 namespace Assets.MyAssets.PORTFOLIO_Assets.Scripts.Core
 {
-    public class GamePlayController : MonoBehaviour
+    public sealed class GamePlayController : MonoBehaviour
     {
         [Header("게임 플레이 시간 설정")]
         [SerializeField] private float playTimeSeconds = 120f;
@@ -24,19 +25,15 @@ namespace Assets.MyAssets.PORTFOLIO_Assets.Scripts.Core
         [Header("판정 연출")]
         [SerializeField] private float judgeDelaySeconds = 0.8f;
 
-        private float remainingTime;
+        // 게임 규칙. 
+        // (제한 시간, 주문 판정(정확한 메뉴를 담았는가, 이번 선택이 해당 주문의 마지막 메뉴였는가 등), 성공/실패 점수 계산)
+        private readonly PlayClock clock = new();
+        private readonly OrderSession session = new();
+        private readonly ScoreBoard scoreBoard = new();
+
+        /// <summary>현재 게임이 진행중인지 판별 bool. Pause 구분용.</summary>
         private bool isRunning;
-
-        private int score;
-        private int successCount;
-        private int failCount;
         private int customerNumber;
-
-        private List<DessertType> currentOrder = new();
-        private readonly List<DessertType> tray = new();
-
-        /// <summary>주문에서 아직 안 담은 개수.</summary>
-        private readonly Dictionary<DessertType, int> remaining = new();
 
         /// <summary>주문과 쟁반에 담은 종류가 일치하는지 판정 여부.</summary>
         private bool isJudging;
@@ -44,26 +41,28 @@ namespace Assets.MyAssets.PORTFOLIO_Assets.Scripts.Core
         /// <summary>판정 대기가 끝났을 때 그 사이 새 판이 시작됐는지 구분하는 표식.</summary>
         private int judgeToken;
 
-        public float RemainingTime => remainingTime;
+        // 외부 공개용 프로퍼티
+        public float RemainingTime => clock.Remaining; // 남은 시간
 
         public float PlayTimeSeconds => playTimeSeconds;
 
-        public bool IsRunning => isRunning;
+        public bool IsRunning => isRunning; // 게임 진행 여부
 
-        public int Score => score;
+        public int Score => scoreBoard.Score;
 
-        public int SuccessCount => successCount;
+        public int SuccessCount => scoreBoard.SuccessCount;
 
-        public int FailCount => failCount;
+        public int FailCount => scoreBoard.FailCount;
 
-        public bool IsJudging => isJudging;
+        public bool IsJudging => isJudging; // 판정 결과
 
         public int CustomerNumber => customerNumber;
 
-        public IReadOnlyList<DessertType> CurrentOrder => currentOrder;
+        public IReadOnlyList<DessertType> CurrentOrder => session.Order; // 현재 주문 리스트
 
-        public IReadOnlyList<DessertType> Tray => tray;
+        public IReadOnlyList<DessertType> Tray => session.Tray;
 
+        // 이벤트 Actions
         public event Action<float, float> OnTimeChanged;
 
         public event Action<int> OnScoreChanged;
@@ -87,6 +86,9 @@ namespace Assets.MyAssets.PORTFOLIO_Assets.Scripts.Core
 
         private void Awake()
         {
+            clock.Reset(playTimeSeconds);
+            scoreBoard.Reset(scorePerSuccess, scorePenaltyPerFail);
+
             if (orderGenerator != null && orderGenerator.OrderCount != trayCapacity)
             {
                 Debug.LogWarning(name + ": 주문 개수(" + orderGenerator.OrderCount
@@ -102,29 +104,24 @@ namespace Assets.MyAssets.PORTFOLIO_Assets.Scripts.Core
             }
         }
 
-        // 초기화와 시작을 나눈 이유: 카운트다운이 도는 동안 시계는 멈춰 있어야 하는데
-        // HUD 는 시작값(120초)을 이미 보여주고 있어야 한다.
         public void Prepare()
         {
-            remainingTime = playTimeSeconds;
+            clock.Reset(playTimeSeconds);
             SetRunning(false);
 
-            score = 0;
-            successCount = 0;
-            failCount = 0;
+            scoreBoard.Reset(scorePerSuccess, scorePenaltyPerFail);
             customerNumber = 0;
 
-            // 진행 중이던 판정 대기를 무효로 만든다. 다시하기를 0.8초 안에 누르면
-            // 이전 판의 대기가 뒤늦게 깨어나 새 판의 손님을 넘겨 버린다.
+            // 진행 중이던 판정 대기를 무효. 
+            // 다시하기를 0.8초 안에 누르면 이전 판의 대기가 뒤늦게 깨어나 새 판의 손님을 넘겨 버린다.
             judgeToken++;
             SetJudging(false);
 
             NextCustomer();
 
-            // 시작 상태를 전부 발행한다. View 가 초기값을 따로 읽을 필요가 없다.
-            OnTimeChanged?.Invoke(remainingTime, playTimeSeconds);
-            OnScoreChanged?.Invoke(score);
-            OnCountChanged?.Invoke(successCount, failCount);
+            OnTimeChanged?.Invoke(clock.Remaining, playTimeSeconds);
+            OnScoreChanged?.Invoke(scoreBoard.Score);
+            OnCountChanged?.Invoke(scoreBoard.SuccessCount, scoreBoard.FailCount);
         }
 
         public void StartGame()
@@ -133,7 +130,6 @@ namespace Assets.MyAssets.PORTFOLIO_Assets.Scripts.Core
             SetRunning(true);
         }
 
-        // 값이 바뀔 때만 발행한다. 매 프레임 부르는 곳이 생기더라도 View 가 헛일하지 않는다.
         public void SetRunning(bool running)
         {
             if (isRunning == running)
@@ -152,79 +148,55 @@ namespace Assets.MyAssets.PORTFOLIO_Assets.Scripts.Core
                 return;
             }
 
-            remainingTime = Mathf.Max(0f, remainingTime - deltaTime);
-            OnTimeChanged?.Invoke(remainingTime, playTimeSeconds);
+            bool expired = clock.Tick(deltaTime);
+            OnTimeChanged?.Invoke(clock.Remaining, playTimeSeconds);
 
-            if (remainingTime <= 0f)
+            if (expired)
             {
                 SetRunning(false);
                 OnGameOver?.Invoke();
             }
         }
 
-        // 진열대 버튼이 부르는 유일한 진입점. 누른 즉시 여기서 판정이 끝난다.
         public void Pick(DessertType type)
         {
-            // 데이터 층의 잠금. 표시 층(ShelfView 의 interactable)만으로는
-            // 키보드 Submit 이나 빠른 연타가 뚫는다.
             if (!isRunning || isJudging)
             {
                 return;
             }
 
-            if (!remaining.TryGetValue(type, out int left) || left <= 0)
+            PickResult result = session.Pick(type);
+            if (result == PickResult.Rejected)
             {
-                // 주문에 없거나 이미 필요한 만큼 담았다. 개수 초과도 여기서 같이 걸린다.
                 Judge(false);
                 return;
             }
 
-            remaining[type] = left - 1;
-            tray.Add(type);
-            OnTrayChanged?.Invoke(tray);
+            OnTrayChanged?.Invoke(session.Tray);
 
-            if (IsOrderComplete())
+            if (result == PickResult.Completed)
             {
                 Judge(true);
             }
         }
 
-        private bool IsOrderComplete()
-        {
-            foreach (int left in remaining.Values)
-            {
-                if (left > 0)
-                {
-                    return false;
-                }
-            }
-
-            return true;
-        }
-
         private void Judge(bool success)
         {
-            if (success)
-            {
-                score += scorePerSuccess;
-                successCount++;
-            }
-            else
-            {
-                score = Mathf.Max(0, score - scorePenaltyPerFail);
-                failCount++;
-            }
+            scoreBoard.Apply(success);
 
             OnJudged?.Invoke(success);
-            OnScoreChanged?.Invoke(score);
-            OnCountChanged?.Invoke(successCount, failCount);
+            OnScoreChanged?.Invoke(scoreBoard.Score);
+            OnCountChanged?.Invoke(scoreBoard.SuccessCount, scoreBoard.FailCount);
 
             BeginJudgeDelay();
         }
 
-        // 바로 다음 손님으로 넘기지 않는 이유 두 가지.
-        //   1. 실패한 순간 주문이 바뀌면 무엇을 잘못 눌렀는지 확인할 수 없다.
-        //   2. 연타하면 실패 → 새 주문 → 또 실패가 0.1초 안에 줄줄이 일어난다.
+        /// <summary>
+        /// 바로 다음 손님으로 넘어가지 않고 딜레이를 줌. 
+        /// 
+        /// 연타하면 실패 → 새 주문 → 또 실패가 0.1초 안에 줄줄이 일어나는 현상 방지.
+        /// 실패한 순간 주문이 바뀌면 무엇을 잘못 눌렀는지 확인 불가능하므로 플레이어가 알 수 있도록 약간의 딜레이 줌.
+        /// </summary>
         private async void BeginJudgeDelay()
         {
             int token = ++judgeToken;
@@ -239,7 +211,7 @@ namespace Assets.MyAssets.PORTFOLIO_Assets.Scripts.Core
                 return;
             }
 
-            // 대기 중에 Prepare() 가 불렸다면(다시하기) 이 대기는 이미 남의 판 이야기다.
+            // 대기 중에 Prepare() 가 불렸다면(다시하기) 이 대기는 이미 다른 판이 되었으므로 대기를 종료.
             if (token != judgeToken)
             {
                 return;
@@ -253,21 +225,12 @@ namespace Assets.MyAssets.PORTFOLIO_Assets.Scripts.Core
         {
             customerNumber++;
 
-            currentOrder = orderGenerator != null
+            session.Begin(orderGenerator != null
                 ? orderGenerator.Generate()
-                : new List<DessertType>();
+                : null);
 
-            remaining.Clear();
-            foreach (DessertType type in currentOrder)
-            {
-                remaining.TryGetValue(type, out int count);
-                remaining[type] = count + 1;
-            }
-
-            tray.Clear();
-
-            OnOrderChanged?.Invoke(currentOrder, customerNumber);
-            OnTrayChanged?.Invoke(tray);
+            OnOrderChanged?.Invoke(session.Order, customerNumber);
+            OnTrayChanged?.Invoke(session.Tray);
         }
 
         private void SetJudging(bool judging)

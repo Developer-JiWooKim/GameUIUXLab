@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace Assets.MyAssets.PORTFOLIO_Assets.Scripts.Core
 {
-    public class OrderGenerator : MonoBehaviour
+    public sealed class OrderGenerator : MonoBehaviour
     {
         [Header("디저트 종류를 담고 있는 테이블")]
         [SerializeField] private DessertTable dessertTable;
@@ -21,6 +21,9 @@ namespace Assets.MyAssets.PORTFOLIO_Assets.Scripts.Core
             }
         }
 
+        /// <summary>
+        /// 주문 개수만큼 주문표 생성.
+        /// </summary>
         public List<DessertType> Generate()
         {
             int typeCount = dessertTable != null ? dessertTable.Count : DessertTable.TypeCount;

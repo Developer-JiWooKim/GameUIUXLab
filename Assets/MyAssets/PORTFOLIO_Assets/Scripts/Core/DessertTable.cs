@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace Assets.MyAssets.PORTFOLIO_Assets.Scripts.Core
 {
-    public class DessertTable : MonoBehaviour
+    public sealed class DessertTable : MonoBehaviour
     {
         [Header("디저트 아이콘 스프라이트")]
         [SerializeField] private Sprite[] sprites = new Sprite[TypeCount];
