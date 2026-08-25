@@ -34,6 +34,8 @@ namespace Assets.MyAssets.PORTFOLIO_Assets.Scripts.Screens
         private GameObject lastSelected;
         private Selectable lastSelectable;
 
+        private bool needsFit;
+
         private int lastScreenWidth;
         private int lastScreenHeight;
 
@@ -93,11 +95,11 @@ namespace Assets.MyAssets.PORTFOLIO_Assets.Scripts.Screens
                 return;
             }
 
-            bool selectionChanged = selected != lastSelected;
-            if (selectionChanged)
+            if (selected != lastSelected)
             {
                 lastSelected = selected;
                 lastSelectable = selected.GetComponent<Selectable>();
+                needsFit = true;
             }
 
             // 눌리지 않는 버튼(판정 중 잠긴 진열대 등)에는 테두리를 두르지 않게.
@@ -115,14 +117,15 @@ namespace Assets.MyAssets.PORTFOLIO_Assets.Scripts.Screens
                 return;
             }
 
-            // 해상도가 바뀌면 Fit 이 나누는 Canvas 배율이 달라지므로 그때도 다시 맞춘다.
             bool resized = Screen.width != lastScreenWidth || Screen.height != lastScreenHeight;
 
-            if (selectionChanged || resized)
+            if (needsFit || resized)
             {
                 lastScreenWidth = Screen.width;
                 lastScreenHeight = Screen.height;
                 Fit(target);
+
+                needsFit = false;
             }
 
             SetVisible(true);

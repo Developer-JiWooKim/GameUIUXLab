@@ -148,9 +148,17 @@ namespace Assets.MyAssets.PORTFOLIO_Assets.Scripts.Screens
 
         private void PushInternal(UIStateBase next)
         {
+            UIStateBase below = Top;
+
+            if (below != null)
+            {
+                below.SetInteractable(false);
+            }
+
             stack.Push(next);
 
             next.gameObject.SetActive(true);
+            next.SetInteractable(true);
             next.Enter();
 
             ApplyFocus();
@@ -166,6 +174,13 @@ namespace Assets.MyAssets.PORTFOLIO_Assets.Scripts.Screens
             UIStateBase top = stack.Pop();
             top.Exit();
             top.gameObject.SetActive(false);
+
+            UIStateBase below = Top;
+
+            if (below != null)
+            {
+                below.SetInteractable(true);
+            }
         }
 
         private void ApplyFocus()
