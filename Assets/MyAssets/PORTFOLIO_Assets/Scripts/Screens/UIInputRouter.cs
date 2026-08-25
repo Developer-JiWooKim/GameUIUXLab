@@ -1,27 +1,18 @@
-using Assets.MyAssets.PORTFOLIO_Assets.Scripts.States;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 
-namespace Assets.MyAssets.PORTFOLIO_Assets.Scripts.UI
+namespace Assets.MyAssets.PORTFOLIO_Assets.Scripts.Screens
 {
     /// <summary>
-    /// UI 액션을 직접 구독해 "선택된 오브젝트와 무관한" 입력을 처리한다. UIRoot 에 붙인다.
-    ///
-    /// 담당은 셋이다.
+    /// UI 액션을 직접 구독해 "선택된 오브젝트와 무관한" 입력을 처리.
     ///   Cancel      - Esc / 게임패드 B → ScreenFlowController.HandleCancel()
-    ///   선택 해제   - 마우스·터치로 조작하면 키보드 선택 테두리를 지운다
+    ///   선택 해제   - 마우스·터치로 조작하면 키보드 선택 테두리를 지움
     ///   선택 복구   - 선택이 비었을 때 Navigate·Submit 이 들어오면 현재 화면 첫 버튼을 다시 선택
-    ///
-    /// 마우스·터치·게임패드 이동/확정 자체는 InputSystemUIInputModule 이 처리한다.
-    /// 여기서 다시 구현하지 않는다.
-    ///
-    /// 선택 해제·복구를 콜백에서 바로 하지 않고 LateUpdate 로 미루는 이유는
-    /// ApplyPendingSelection 주석 참고. 프레임 순서 때문에 반드시 필요하다.
     /// </summary>
-    public class UIInputRouter : MonoBehaviour
+    public sealed class UIInputRouter : MonoBehaviour
     {
-        [Header("참조")]
+        [Header("ScreenFlowController")]
         [SerializeField] private ScreenFlowController screenFlow;
 
         [Header("UI 액션")]
@@ -31,7 +22,7 @@ namespace Assets.MyAssets.PORTFOLIO_Assets.Scripts.UI
         [SerializeField] private InputActionReference submitAction;
 
         [Header("설정")]
-        [Tooltip("스틱을 놓을 때 오는 0 근처 값을 복구 신호로 오인하지 않게 걸러낸다")]
+        [Tooltip("스틱을 놓을 때 오는 0 근처 값을 복구 신호로 오인하지 않게 걸러냄")]
         [SerializeField] private float navigateDeadzone = 0.2f;
 
         private bool clearRequested;
@@ -41,15 +32,7 @@ namespace Assets.MyAssets.PORTFOLIO_Assets.Scripts.UI
 
         /// <summary>
         /// 마지막 조작이 선택 계열(Navigate·Submit)이면 true, 포인터면 false.
-        /// FocusRing 이 읽어 테두리를 켜고 끈다.
-        ///
-        /// 선택이 있느냐와는 다른 값이다. 화면이 바뀔 때 ScreenFlowController 가 첫 버튼을
-        /// 선택하므로 선택은 거의 항상 존재하지만, 마우스로 화면을 넘긴 직후에 테두리가
-        /// 떠 있으면 안 된다. "지금 키보드·패드로 조작 중인가" 를 따로 들고 있어야 한다.
-        ///
-        /// 콜백에서 바로 갱신한다. 액션 콜백은 Update 보다 앞선 입력 갱신 단계에서 오므로
-        /// 어느 LateUpdate 보다도 먼저 확정된다. 선택 해제·복구와 달리 프레임 순서 문제가
-        /// 없는 값이라 지연시킬 이유가 없다.
+        /// FocusRing 이 읽어 테두리를 켜고 끔.
         /// </summary>
         public bool IsSelectionMode { get; private set; }
 
@@ -124,22 +107,14 @@ namespace Assets.MyAssets.PORTFOLIO_Assets.Scripts.UI
             IsSelectionMode = true;
         }
 
-        /// <summary>
-        /// Submit 도 선택 계열로 친다. 마우스로 누른 뒤 Enter 를 치면 선택이 비어 있어
-        /// RestoreSelection 이 첫 버튼을 되살리는데, 이때 테두리가 숨어 있으면 포커스가
-        /// 보이지 않는 곳으로 옮겨간 뒤 다음 Enter 에 그 버튼이 실행된다.
-        /// 무엇이 눌릴지 모르는 상태가 되므로 Navigate 와 같이 취급한다.
-        /// </summary>
         private void OnSubmit(InputAction.CallbackContext context)
         {
             restoreRequested = true;
             IsSelectionMode = true;
         }
 
-        // 지연 적용
-
         /// <summary>
-        /// 선택 변경을 한 프레임 안에서 "모듈보다 늦게" 적용한다.
+        /// 선택 변경을 한 프레임 안에서 "모듈보다 늦게" 적용.
         ///
         /// EventSystem 은 Update 에서 돌고 LateUpdate 는 그 뒤다. 액션 콜백은 반대로
         /// Update 보다 앞선 입력 갱신 단계에서 오므로, 콜백에서 곧바로 선택을 바꾸면

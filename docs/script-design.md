@@ -127,42 +127,54 @@ Controller/View  GamePlayController를 읽어서 TMP·Image에 "반영만" 한�
 
 ```
 Scripts/
-├ Core/
+├ Core/                   데이터와 규칙. 바깥을 참조하지 않는다
 │ ├ DessertType.cs        enum
 │ ├ DessertTable.cs       DessertType → 스프라이트 조회
 │ ├ OrderGenerator.cs     무작위 주문 생성
-│ ├ GamePlayController.cs          게임 데이터 + 진행 (이 프로젝트의 심장)
-│ └ RankTable.cs          성공·실패 → 등급 A~F 판정
-├ UI/
-│ ├ ScreenFlowController.cs      화면 전환 + 첫 선택 버튼 지정
-│ ├ UIInputRouter.cs      Cancel(Esc·패드B), 포인터 시 선택 해제, 선택 복구
+│ ├ GamePlayController.cs 게임 데이터 + 진행 (이 프로젝트의 심장)
+│ ├ RankTable.cs          성공·실패 → 등급 A~F 판정
+│ └ Rules/                순수 C# 규칙. UnityEngine 도 참조하지 않는다
+│   ├ PlayClock.cs        영업시간 카운트다운 (델타를 밖에서 받음)
+│   ├ ScoreBoard.cs       점수·성공·실패 계산 (점수 0 하한)
+│   ├ OrderSession.cs     주문 남은 개수 · 쟁반 · Pick 판정
+│   └ PickResult.cs       enum — Accepted / Completed / Rejected
+├ Views/                  패널 바인딩. Core 만 참조한다
 │ ├ HudController.cs      TopNav 바인딩
 │ ├ OrderCardView.cs      주문 카드 표시
 │ ├ TrayView.cs           쟁반 표시 (표시 전용)
 │ ├ ShelfView.cs          진열대 5버튼 입력 수신 + 판정 중 잠금
 │ ├ ShelfButton.cs        버튼 1개가 자기 DessertType 을 들고 있음
 │ ├ DessertIconView.cs    OrderPrefab / ChoicePrefab 공용 컴포넌트
+│ ├ DessertIconPool.cs    주문 카드·쟁반 공용 아이콘 풀 (MonoBehaviour 아님)
 │ ├ ToastController.cs    알림 표시·소멸
 │ ├ CountdownView.cs      시작 카운트다운 (3·2·1·Start!)
-│ └ ResultView.cs         결과 화면 값 채우기
-└ States/
-  ├ IState.cs             화면 상태 계약 (FirstSelected / Enter / Exit / OnCancel)
-  ├ UiStateBase.cs        공통 부모. 각 Screen_ 패널에 붙는다
+│ ├ ResultView.cs         결과 화면 값 채우기
+│ └ AspectRatioLetterbox.cs  Main Camera 레터박스
+└ Screens/                화면 흐름·상태·입력 라우팅. Views 와 Core 를 참조한다
+  ├ IState.cs             화면 상태 계약 + IScreenController
+  ├ UIStateBase.cs        공통 부모. 각 Screen_ 패널에 붙는다
   ├ TitleState.cs
   ├ PlayState.cs
   ├ PauseState.cs
   ├ ConfirmState.cs
-  └ ResultState.cs
+  ├ ResultState.cs
+  ├ ScreenFlowController.cs  화면 전환 + 첫 선택 버튼 지정
+  ├ UIInputRouter.cs      Cancel(Esc·패드B), 포인터 시 선택 해제, 선택 복구
+  ├ ScreenFade.cs         전환 페이드
+  └ FocusRing.cs          선택 테두리 (UIInputRouter 를 읽는다)
 ```
 
-각 파일 100줄을 넘지 않아야 정상입니다. `GamePlayController` 만 150줄 근처가 됩니다.
+각 파일 100줄을 넘지 않아야 정상입니다. `GamePlayController` 만 200줄 넘게 커졌는데,
+계산까지 떠안고 있었기 때문입니다. 그래서 규칙 계산은 `Core/Rules/` 의 순수 C# 클래스로 내리고
+`GamePlayController` 에는 Unity 에만 있는 일(프레임 루프, 판정 지연, 인스펙터 설정, 이벤트 발행)만 남겼습니다.
+공개 API 와 이벤트는 그대로여서 씬 배선은 건드리지 않습니다.
 
 기존 파일 처리:
 
 | 파일 | 처리 |
 | :--- | :--- |
-| `UIFlowController.cs` | **삭제 완료.** `Scripts/UI/ScreenFlowController.cs` 가 대체합니다. |
-| `States/IState.cs` | **채택.** 스택 FSM 으로 확정했습니다. 부록 A 참고. |
+| `UIFlowController.cs` | **삭제 완료.** `Scripts/Screens/ScreenFlowController.cs` 가 대체합니다. |
+| `Screens/IState.cs` | **채택.** 스택 FSM 으로 확정했습니다. 부록 A 참고. |
 
 네임스페이스는 기존 파일의 `Assets.MyAssets.PORTFOLIO_Assets.Scripts...` 를 그대로 이어가든,
 전부 `DessertShop` 으로 통일하든 **둘 중 하나로** 가세요. 섞이면 `using` 이 지저분해집니다.
@@ -1261,7 +1273,7 @@ public interface IState
 > **`[SerializeField]` 에 인터페이스 타입을 쓰지 마세요.** Unity 직렬화기는 인터페이스를
 > 직렬화하지 못해 인스펙터에 칸 자체가 나오지 않습니다. `ScreenFlowController` 의 참조 필드는
 > `TitleState`, `PlayState` … 같은 **구체 타입**으로 선언하고, 공통 동작은
-> `UiStateBase` 추상 클래스로 묶습니다.
+> `UIStateBase` 추상 클래스로 묶습니다.
 
 ---
 

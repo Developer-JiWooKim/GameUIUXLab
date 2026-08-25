@@ -1,10 +1,10 @@
 using UnityEngine;
 
-namespace Assets.MyAssets.PORTFOLIO_Assets.Scripts.States
+namespace Assets.MyAssets.PORTFOLIO_Assets.Scripts.Screens
 {
     public abstract class UIStateBase : MonoBehaviour, IState
     {
-        [Header("처음 진입 시 포커스")]
+        [Header("처음 진입 시 포커스 설정")]
         [SerializeField] private GameObject firstSelected;
 
         public GameObject FirstSelected => firstSelected;

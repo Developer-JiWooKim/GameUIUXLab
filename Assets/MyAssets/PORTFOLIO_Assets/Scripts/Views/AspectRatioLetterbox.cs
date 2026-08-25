@@ -1,10 +1,13 @@
 using UnityEngine;
 
-namespace Assets.MyAssets.PORTFOLIO_Assets.Scripts.UI
+namespace Assets.MyAssets.PORTFOLIO_Assets.Scripts.Views
 {
+    /// <summary>
+    /// 해상도 대응 컴포넌트. (targetAspect를 넘어가는 부분은 검은색 레터박스 생기게)
+    /// </summary>
     [RequireComponent(typeof(Camera))]
     [DisallowMultipleComponent]
-    public class AspectRatioLetterbox : MonoBehaviour
+    public sealed class AspectRatioLetterbox : MonoBehaviour
     {
         [Header("고정 화면 해상도")]
         [SerializeField] private Vector2 targetAspect = new Vector2(1080f, 1920f);
@@ -34,7 +37,7 @@ namespace Assets.MyAssets.PORTFOLIO_Assets.Scripts.UI
             lastWidth = Screen.width;
             lastHeight = Screen.height;
 
-            // 인스펙터를 비워두거나 창이 최소화된 순간에 0 나눗셈이 나지 않게 막는다
+            // 인스펙터를 비워두거나 창이 최소화된 순간에 0 나눗셈이 나지 않게
             if (targetAspect.x <= 0f || targetAspect.y <= 0f || lastWidth <= 0 || lastHeight <= 0)
             {
                 return;

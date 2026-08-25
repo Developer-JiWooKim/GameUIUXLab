@@ -1,12 +1,11 @@
 using System;
 using System.Collections.Generic;
-using Assets.MyAssets.PORTFOLIO_Assets.Scripts.States;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
-namespace Assets.MyAssets.PORTFOLIO_Assets.Scripts.UI
+namespace Assets.MyAssets.PORTFOLIO_Assets.Scripts.Screens
 {
-    public class ScreenFlowController : MonoBehaviour, IScreenController
+    public sealed class ScreenFlowController : MonoBehaviour, IScreenController
     {
         [Header("Screen 패널")]
         [SerializeField] private TitleState titleState;
@@ -15,16 +14,16 @@ namespace Assets.MyAssets.PORTFOLIO_Assets.Scripts.UI
         [SerializeField] private ConfirmState confirmState;
         [SerializeField] private ResultState resultState;
 
-        [Header("Fade Effect UI")]
+        [Header("Fade Effect")]
         [SerializeField] private ScreenFade fade;
 
-        private readonly Stack<UIStateBase> stack = new Stack<UIStateBase>();
+        private readonly Stack<UIStateBase> stack = new();
 
         private bool isTransitioning;
 
         public UIStateBase Top => stack.Count > 0 ? stack.Peek() : null;
 
-        /// <summary>현재 화면의 첫 버튼</summary>
+        /// <summary>현재 화면의 첫 Focus.</summary>
         public GameObject CurrentFirstSelected
         {
             get
@@ -46,7 +45,6 @@ namespace Assets.MyAssets.PORTFOLIO_Assets.Scripts.UI
         }
 
         private void Start() => ShowTitle();
-
 
         public void ShowTitle() => SetScreen(titleState);
 

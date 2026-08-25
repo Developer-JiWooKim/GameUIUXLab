@@ -1,9 +1,9 @@
 using UnityEngine;
 
-namespace Assets.MyAssets.PORTFOLIO_Assets.Scripts.UI
+namespace Assets.MyAssets.PORTFOLIO_Assets.Scripts.Screens
 {
     [RequireComponent(typeof(CanvasGroup))]
-    public class ScreenFade : MonoBehaviour
+    public sealed class ScreenFade : MonoBehaviour
     {
         [SerializeField] private float fadeDuration = 0.5f;
         private CanvasGroup canvasGroup;
