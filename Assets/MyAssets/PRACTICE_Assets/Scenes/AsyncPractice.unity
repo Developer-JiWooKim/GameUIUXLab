@@ -160,15 +160,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 477360536}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 563551817139cd54fa2bf8bbc1a06c2b, type: 3}
+  m_Script: {fileID: 11500000, guid: ee10b1c1be13652448d6bd022570755b, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Assets.MyAssets.PRACTICE_Assets.Scripts.Study.Async.A3_Sequence
-  steps:
-  - 3
-  - 2
-  - 1
-  - Start!
-  stepSeconds: 0.5
+  m_EditorClassIdentifier: Assembly-CSharp::Assets.MyAssets.PRACTICE_Assets.Scripts.Study.Async.A6_Cancel
 --- !u!1 &638136047
 GameObject:
   m_ObjectHideFlags: 0
