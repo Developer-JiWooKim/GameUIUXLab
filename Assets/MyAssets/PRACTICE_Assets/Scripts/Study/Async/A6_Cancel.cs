@@ -1,5 +1,6 @@
 using System;
 using System.Threading;
+using System.Threading.Tasks;
 using UnityEngine;
 
 namespace Assets.MyAssets.PRACTICE_Assets.Scripts.Study.Async
@@ -15,10 +16,12 @@ namespace Assets.MyAssets.PRACTICE_Assets.Scripts.Study.Async
     /// </summary>
     public sealed class A6_Cancel : MonoBehaviour
     {
-        // TODO: private CancellationTokenSource cts;
+        private CancellationTokenSource cts;
 
         private async void Start()
         {
+            Debug.Log("시작");
+
             Request("A");
             await Awaitable.WaitForSecondsAsync(0.3f);
 
@@ -34,8 +37,7 @@ namespace Assets.MyAssets.PRACTICE_Assets.Scripts.Study.Async
         /// <summary>1초 뒤 message 를 찍는다. 이전 요청이 진행 중이면 그건 취소한다.</summary>
         public void Request(string message)
         {
-            // TODO: RunRequest(message);
-            throw new NotImplementedException();
+            RunRequest(message);
         }
 
         // TODO: private async void RunRequest(string message)
@@ -44,12 +46,41 @@ namespace Assets.MyAssets.PRACTICE_Assets.Scripts.Study.Async
         //         ③ try { await ...(1f, cts.Token); } catch (OperationCanceledException) { return; }
         //         ④ Debug.Log(message);
 
+        private async void RunRequest(string message)
+        {
+            Cancel();
+            cts = CancellationTokenSource.CreateLinkedTokenSource(destroyCancellationToken);
+
+            try
+            {
+                await Awaitable.WaitForSecondsAsync(1f, cts.Token);
+            }
+            catch (OperationCanceledException)
+            {
+                return;
+            }
+
+            Debug.Log(message);
+        }
+
+        private void Cancel()
+        {
+            if (cts == null)
+            {
+                return;
+            }
+
+            cts.Cancel();
+            cts.Dispose();
+            cts = null;
+        }
+
         // TODO: private void Cancel()
         //         Cancel() → Dispose() → null   세 줄이 한 세트
 
         private void OnDestroy()
         {
-            // TODO: Cancel();
+            Cancel();
         }
     }
 }

@@ -1,5 +1,3 @@
-using System;
-using System.Threading;
 using UnityEngine;
 
 namespace Assets.MyAssets.PRACTICE_Assets.Scripts.Study.Level5
@@ -38,24 +36,23 @@ namespace Assets.MyAssets.PRACTICE_Assets.Scripts.Study.Level5
         /// <summary>0 → 1</summary>
         public async Awaitable FadeIn()
         {
-            if (!IsFading)
+            if (IsFading)
             {
                 return;
             }
+
             gameObject.SetActive(true);
             await Fade(0f, 1f, fadeDuration);
-            IsFading = !IsFading;
         }
 
         /// <summary>1 → 0. 끝나면 gameObject 를 끈다.</summary>
         public async Awaitable FadeOut()
         {
-            if (!IsFading)
+            if (IsFading)
             {
                 return;
             }
             await Fade(1f, 0f, fadeDuration);
-            IsFading = !IsFading;
             gameObject.SetActive(false);
         }
 
@@ -65,19 +62,24 @@ namespace Assets.MyAssets.PRACTICE_Assets.Scripts.Study.Level5
 
         private async Awaitable Fade(float from, float to, float duration)
         {
+            IsFading = true;
             canvasGroup.alpha = from;
-            int elasped;
+
             try
             {
+                float elapsed = 0f;
+                while (elapsed < duration)
+                {
+                    await Awaitable.NextFrameAsync(destroyCancellationToken);
+                    elapsed += Time.unscaledDeltaTime;
+                    canvasGroup.alpha = Mathf.Lerp(from, to, elapsed / duration);
+                }
 
-            }
-            catch (OperationCanceledException)
-            {
-
+                canvasGroup.alpha = to;
             }
             finally
             {
-
+                IsFading = false;
             }
         }
     }

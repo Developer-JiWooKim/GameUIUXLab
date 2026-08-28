@@ -38,8 +38,15 @@ namespace Assets.MyAssets.PRACTICE_Assets.Scripts.Study.Async
     {
         public async void Run()
         {
-            // TODO: destroyCancellationToken 을 넘기고 try/catch 로 감싼다
-            await Awaitable.WaitForSecondsAsync(3f);
+            try
+            {
+                // TODO: destroyCancellationToken 을 넘기고 try/catch 로 감싼다
+                await Awaitable.WaitForSecondsAsync(3f, destroyCancellationToken);
+            }
+            catch (OperationCanceledException)
+            {
+                return;
+            }
 
             // 여기 도달했을 때 이 오브젝트는 이미 파괴돼 있다
             Debug.Log("3.0초 : 깨어남. 내 위치는 " + transform.position);

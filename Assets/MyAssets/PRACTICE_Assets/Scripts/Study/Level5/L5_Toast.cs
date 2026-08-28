@@ -1,5 +1,6 @@
 using System;
 using System.Threading;
+using Assets.MyAssets.PRACTICE_Assets.Scripts.Study.Level3;
 using Assets.MyAssets.PRACTICE_Assets.Scripts.Study.Level4;
 using TMPro;
 using UnityEngine;
@@ -31,7 +32,8 @@ namespace Assets.MyAssets.PRACTICE_Assets.Scripts.Study.Level5
         [SerializeField] private string successMessage = "성공!";
         [SerializeField] private string failMessage = "실패..";
 
-        // TODO: private CancellationTokenSource hideCts;
+        private CancellationTokenSource cts;
+
 
         /// <summary>채점용.</summary>
         public bool IsVisible => root != null && root.activeSelf;
@@ -48,5 +50,79 @@ namespace Assets.MyAssets.PRACTICE_Assets.Scripts.Study.Level5
         //         ③ try { await ... } catch (OperationCanceledException) { return; }
         //         ④ SetVisible(false); HideCount++;
         // TODO: CancelHide() — Cancel() → Dispose() → null  세 줄이 한 세트
+
+        private async void RunHide()
+        {
+            CancelHide();
+            cts = CancellationTokenSource.CreateLinkedTokenSource(destroyCancellationToken);
+
+            try
+            {
+                await Awaitable.WaitForSecondsAsync(showSeconds, cts.Token);
+            }
+            catch (OperationCanceledException)
+            {
+                return;
+            }
+
+            HideCount++;
+            root.SetActive(false);
+        }
+
+        private void HandlePicked(PickOutcome pickOutcome)
+        {
+            if (pickOutcome == PickOutcome.Accepted)
+            {
+                return;
+            }
+            string message = pickOutcome == PickOutcome.Rejected ? failMessage : successMessage;
+            messageText.text = message;
+            root.SetActive(true);
+
+            RunHide();
+
+        }
+        private void OnEnable()
+        {
+            if (runner == null || root == null || messageText == null)
+            {
+                return;
+            }
+            root.SetActive(false);
+            runner.OnPicked += HandlePicked;
+        }
+
+        private void OnDisable()
+        {
+            CancelHide();
+
+            if (runner == null)
+            {
+                runner.OnPicked -= HandlePicked;
+            }
+
+            if (root == null)
+            {
+                root.SetActive(false);
+            }
+        }
+
+        private void OnDestroy()
+        {
+            CancelHide();
+        }
+
+        private void CancelHide()
+        {
+            if (cts == null)
+            {
+                return;
+            }
+
+            cts.Cancel();
+            cts.Dispose();
+            cts = null;
+        }
+
     }
 }

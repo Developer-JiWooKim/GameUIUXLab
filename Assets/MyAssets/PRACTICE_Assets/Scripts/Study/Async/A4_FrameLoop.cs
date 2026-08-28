@@ -1,3 +1,5 @@
+using System;
+using Assets.MyAssets.PRACTICE_Assets.Scripts.Study.Level3;
 using UnityEngine;
 
 namespace Assets.MyAssets.PRACTICE_Assets.Scripts.Study.Async
@@ -18,6 +20,8 @@ namespace Assets.MyAssets.PRACTICE_Assets.Scripts.Study.Async
     {
         public float Value { get; private set; }
 
+        private readonly ChangeTracker tracker = new();
+
         private async void Start()
         {
             // Time.timeScale = 0f;      // ← 나중에 이 줄의 주석을 풀어볼 것
@@ -30,13 +34,25 @@ namespace Assets.MyAssets.PRACTICE_Assets.Scripts.Study.Async
 
         private async Awaitable CountUp(float duration)
         {
-            // TODO
-            throw new System.NotImplementedException();
+            float elapsed = 0f;
+            while (elapsed < duration)
+            {
+                await Awaitable.NextFrameAsync();
+                elapsed += Time.unscaledDeltaTime;
+                Value = Mathf.Lerp(0f, 100f, elapsed / duration);
+            }
+
+            Value = 100f;
         }
 
         private void Update()
         {
             // 진행 상황을 눈으로 보려면 인스펙터 대신 여기서 찍어도 된다
+            int rounded = (int)Value;
+            if (tracker.TryUpdate(rounded))
+            {
+                Debug.Log(rounded);
+            }
         }
     }
 }
