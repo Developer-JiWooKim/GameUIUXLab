@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 namespace Assets.MyAssets.PRACTICE_Assets.Scripts.Study.Level5
@@ -34,14 +35,48 @@ namespace Assets.MyAssets.PRACTICE_Assets.Scripts.Study.Level5
         /// <summary>새 판을 시작한다. (다시하기)</summary>
         public void Prepare()
         {
-            throw new System.NotImplementedException();
+            judgeToken++;
+            IsJudging = false;
+            CustomerNumber = 1;
         }
 
         /// <summary>판정이 났다. 잠그고 0.8초 뒤 다음 손님으로.</summary>
         public void Judge(bool success)
         {
-            throw new System.NotImplementedException();
+            if (IsJudging)
+            {
+                return;
+            }
+
+            IsJudging = true;
+            BeginJudgeDelay();
+
+
         }
+
+        private int judgeToken;
+
+        private async void BeginJudgeDelay()
+        {
+            int token = ++judgeToken;
+            try
+            {
+                await Awaitable.WaitForSecondsAsync(judgeDelaySeconds, destroyCancellationToken);
+            }
+            catch (OperationCanceledException)
+            {
+                return;
+            }
+
+            if (token != judgeToken)
+            {
+                return;
+            }
+
+            CustomerNumber++;
+            IsJudging = false;
+        }
+
 
         // TODO: private int judgeToken;
         // TODO: private async void BeginJudgeDelay()

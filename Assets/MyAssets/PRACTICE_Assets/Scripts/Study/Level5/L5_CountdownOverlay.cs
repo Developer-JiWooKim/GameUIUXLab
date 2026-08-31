@@ -1,3 +1,4 @@
+using System;
 using System.Threading;
 using TMPro;
 using UnityEngine;
@@ -28,17 +29,41 @@ namespace Assets.MyAssets.PRACTICE_Assets.Scripts.Study.Level5
         [SerializeField] private string timeoutMessage = "Timeout!!";
         [SerializeField] private float timeoutSeconds = 1f;
 
+
         /// <summary>채점용.</summary>
         public bool IsPanelActive => panel != null && panel.activeSelf;
 
         public async Awaitable PlayIntro(CancellationToken token)
         {
-            throw new System.NotImplementedException();
+            panel.SetActive(true);
+            await ShowSteps(introSteps, introStepSeconds, true, token);
         }
 
         public async Awaitable PlayTimeout(CancellationToken token)
         {
-            throw new System.NotImplementedException();
+            string[] timeout = { timeoutMessage };
+            panel.SetActive(true);
+            await ShowSteps(timeout, timeoutSeconds, false, token);
+        }
+
+        private async Awaitable ShowSteps(string[] steps, float secondsPerStep, bool hideWhenDone, CancellationToken token)
+        {
+            using CancellationTokenSource linked = CancellationTokenSource.CreateLinkedTokenSource(token, destroyCancellationToken);
+            try
+            {
+                foreach (string step in steps)
+                {
+                    text.text = step;
+                    await Awaitable.WaitForSecondsAsync(secondsPerStep, linked.Token);
+                }
+            }
+            finally
+            {
+                if (hideWhenDone)
+                {
+                    panel.SetActive(false);
+                }
+            }
         }
 
         // TODO: private async Awaitable ShowSteps(string[] steps, float secondsPerStep,
