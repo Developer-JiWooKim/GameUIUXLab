@@ -171,15 +171,17 @@ Esc 는 화면마다 다르게 동작.
 
 ### 디저트 아이콘
 
-| DessertType | 파일 | 실루엣 |
+| DessertType | 파일 (Sweet Cakes Icon Pack 원본) | 실루엣 |
 | :--- | :--- | :--- |
-| `ChocoCake` | `Choco_Cake` | 둥근 홀케이크 |
-| `KiwiBigCake` | `Kiwi_BigCake` | 큰 원형 |
-| `LemonRectangularCake` | `Lemon_RectangularCake` | 사각형 |
-| `RainbowCupCake` | `Rainbow_CupCake` | 컵케이크 |
-| `SkullCakePiece` | `Skull_CakePiece` | 삼각 조각 |
+| `ChocoCake` | `Cakes-round/PNG/Choco-Cake` | 둥근 홀케이크 |
+| `KiwiBigCake` | `Cakes-round-big/PNG/Green-Kiwi-BigCake` | 큰 원형 |
+| `LemonRectangularCake` | `Rectangular-pieces-of-cakes/PNG/Yellow-Lemon-Rectangular-CakePiece` | 사각형 |
+| `RainbowCupCake` | `Cupcakes/PNG/Rainbow-Cupcake` | 컵케이크 |
+| `SkullCakePiece` | `Triangular-pieces-of-cakes/PNG/Black-Skull-CakePiece` | 삼각 조각 |
 
 enum 순서를 스프라이트 배열 인덱스로 사용하므로 **순서 바꾸기 X**
+
+아이콘은 복사본을 두지 않고 `Assets/SweetCakesIconPack/Sprites/Cakes/` 의 원본을 직접 참조한다 (저장소 미포함 — README "외부 에셋 / 라이선스" 참고).
 
 ### 글꼴
 

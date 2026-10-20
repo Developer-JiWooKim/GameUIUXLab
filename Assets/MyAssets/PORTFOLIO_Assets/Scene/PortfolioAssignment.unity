@@ -1274,7 +1274,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 99986418be553fa4d8c1df2b187e9853, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 918f36108468a44b98d1b8816e3fab7e, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -2887,7 +2887,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 36a413e6b47a06e46843e333e65b6983, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 56e9f957518374b089cdd16a8ac60309, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -3705,7 +3705,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: a596e0c869a26c644b70caedc60643c3, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 1a2be857b63fa4e28aa570c1770c9a2f, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -6867,7 +6867,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: a769129388fa93f41aae541c2a7184a3, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 5c4132a73dc604c0fb9bfb6352967412, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -7498,7 +7498,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 2f71102b87b7f7b439ed98b144bccd56, type: 3}
+  m_Sprite: {fileID: 21300000, guid: c376fc12d3ac947f2b09eba76a5fc38b, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -8162,11 +8162,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Assets.MyAssets.PORTFOLIO_Assets.Scripts.Core.DessertTable
   sprites:
-  - {fileID: 21300000, guid: 36a413e6b47a06e46843e333e65b6983, type: 3}
-  - {fileID: 21300000, guid: 2f71102b87b7f7b439ed98b144bccd56, type: 3}
-  - {fileID: 21300000, guid: a596e0c869a26c644b70caedc60643c3, type: 3}
-  - {fileID: 21300000, guid: a769129388fa93f41aae541c2a7184a3, type: 3}
-  - {fileID: 21300000, guid: 99986418be553fa4d8c1df2b187e9853, type: 3}
+  - {fileID: 21300000, guid: 56e9f957518374b089cdd16a8ac60309, type: 3}
+  - {fileID: 21300000, guid: c376fc12d3ac947f2b09eba76a5fc38b, type: 3}
+  - {fileID: 21300000, guid: 1a2be857b63fa4e28aa570c1770c9a2f, type: 3}
+  - {fileID: 21300000, guid: 5c4132a73dc604c0fb9bfb6352967412, type: 3}
+  - {fileID: 21300000, guid: 918f36108468a44b98d1b8816e3fab7e, type: 3}
 --- !u!1 &1900001000
 GameObject:
   m_ObjectHideFlags: 0

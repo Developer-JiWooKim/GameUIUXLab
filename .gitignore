@@ -76,3 +76,20 @@ crashlytics-build.properties
 
 # 에디터 플레이 중 생성되는 로컬 세이브 (SaveService — 에디터에서만 프로젝트 루트에 저장)
 /[Ss]ave[Dd]ata/
+
+# 외부 에셋 (라이선스상 재배포 불가 - 저장소 미포함, README "외부 에셋 / 라이선스" 참고)
+/[Aa]ssets/Skyden_Games/
+/[Aa]ssets/Skyden_Games.meta
+/[Aa]ssets/SweetCakesIconPack/
+/[Aa]ssets/SweetCakesIconPack.meta
+
+# 개인 학습 자료
+/[Aa]ssets/MyAssets/PRACTICE_Assets/
+/[Aa]ssets/MyAssets/PRACTICE_Assets.meta
+/PRACTICE_PROBLEMS.md
+/PROGRESS.md
+/CLAUDE.md
+
+# Unity 크래시 복구 씬
+/[Aa]ssets/_Recovery/
+/[Aa]ssets/_Recovery.meta
