@@ -1,8 +1,0 @@
-{
-  "recommendations": [
-    "visualstudiotoolsforunity.vstuc",
-    "ms-dotnettools.vscode-dotnet-runtime",
-    "ms-dotnettools.csharp",
-    "ms-dotnettools.csdevkit"
-  ]
-}
