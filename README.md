@@ -1,4 +1,4 @@
-# 주문받아라!! — UI/UX 포트폴리오 (김지우)
+# 주문받아라!!
 
 손님 주문대로 디저트를 쟁반에 담는 세로형 캐주얼 게임. Unity 6 (6000.5.8f1, URP), UGUI + TextMeshPro, Input System.
 
